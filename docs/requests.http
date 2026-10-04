@@ -1,0 +1,87 @@
+@baseUrl = http://localhost:8081
+@token = REPLACE_ACCESS_TOKEN
+@workspaceId = REPLACE_WORKSPACE_ID
+@taskId = REPLACE_TASK_ID
+
+### Health
+GET {{baseUrl}}/actuator/health
+
+### Register
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "name": "Admin Remiyu",
+  "email": "admin@example.com",
+  "password": "RemiyuDemo2026!"
+}
+
+### Login
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "RemiyuDemo2026!"
+}
+
+### Create Workspace
+POST {{baseUrl}}/api/v1/workspaces
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"name":"Tim Operasional","platform":"WHATSAPP"}
+
+### List Workspaces
+GET {{baseUrl}}/api/v1/workspaces
+Authorization: Bearer {{token}}
+
+### Import chat (JetBrains HTTP Client, file relative to this file)
+POST {{baseUrl}}/api/v1/workspaces/{{workspaceId}}/imports
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=RemiyuBoundary
+
+--RemiyuBoundary
+Content-Disposition: form-data; name="file"; filename="sample-chat.txt"
+Content-Type: text/plain
+
+< ../mockoon/sample-chat.txt
+--RemiyuBoundary--
+
+### Drafts
+GET {{baseUrl}}/api/v1/workspaces/{{workspaceId}}/tasks?status=DRAFT
+Authorization: Bearer {{token}}
+
+### Confirm task
+POST {{baseUrl}}/api/v1/workspaces/{{workspaceId}}/tasks/{{taskId}}/confirm
+Authorization: Bearer {{token}}
+
+### Update status
+PATCH {{baseUrl}}/api/v1/workspaces/{{workspaceId}}/tasks/{{taskId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"status":"IN_PROGRESS"}
+
+### Agenda
+GET {{baseUrl}}/api/v1/workspaces/{{workspaceId}}/agendas
+Authorization: Bearer {{token}}
+
+### Kirim hasil tugas (file opsional; tautan atau file wajib)
+POST {{baseUrl}}/api/v1/workspaces/{{workspaceId}}/tasks/{{taskId}}/submissions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=SubmissionBoundary
+
+--SubmissionBoundary
+Content-Disposition: form-data; name="link"
+
+https://example.com/hasil-tugas
+--SubmissionBoundary
+Content-Disposition: form-data; name="note"
+
+Hasil tugas selesai.
+--SubmissionBoundary--
+
+### Logout
+POST {{baseUrl}}/api/v1/auth/logout
+Authorization: Bearer {{token}}

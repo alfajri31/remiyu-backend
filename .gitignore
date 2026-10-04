@@ -1,0 +1,37 @@
+# Maven build output (including nested modules)
+target/
+*.class
+
+# IDE configuration generated on each developer's machine
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+.factorypath
+.vscode/
+
+# Local secrets; keep the configuration template tracked
+.env
+.env.*
+!.env.example
+
+# Runtime logs and JVM crash / heap dumps
+logs/
+*.log
+hs_err_pid*
+replay_pid*
+*.hprof
+
+# Operating system and editor temporary files
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# Keep Maven wrapper files, source, migrations, Docker configuration,
+# Mockoon fixtures, and application.yml in version control.

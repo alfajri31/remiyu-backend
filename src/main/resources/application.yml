@@ -1,0 +1,43 @@
+server:
+  port: ${SERVER_PORT:8081}
+  error:
+    include-message: never
+spring:
+  application:
+    name: remiyu-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/remiyu}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgre}
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 5000
+  servlet:
+    multipart:
+      max-file-size: 1MB
+      max-request-size: 2MB
+  flyway:
+    enabled: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+remiyu:
+  ai:
+    base-url: ${AI_BASE_URL:http://localhost:3002}
+    extract-path: ${AI_EXTRACT_PATH:/v1/extractions}
+    provider: ${AI_PROVIDER:mockoon}
+    api-key: ${AI_API_KEY:}
+    connect-timeout: 3s
+    read-timeout: 15s
+  auth:
+    token-hours: ${AUTH_TOKEN_HOURS:24}
+  cors-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:8080}
+  seed:
+    enabled: ${SEED_ENABLED:false}
+    email: ${SEED_EMAIL:demo@remiyu.local}
+    password: ${SEED_PASSWORD:}
