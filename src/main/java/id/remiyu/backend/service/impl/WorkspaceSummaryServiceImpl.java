@@ -11,6 +11,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,14 +31,14 @@ public class WorkspaceSummaryServiceImpl implements WorkspaceSummaryService {
   public WorkspaceSummaryView generate(UUID user, UUID workspace) {
     var view = workspaces.get(workspace, user);
     var taskItems =
-        tasks.list(workspace, null, 100, 0).stream()
+        tasks.list(workspace, null, PageRequest.of(0, 100)).getContent().stream()
             .map(
                 t ->
                     new AiContracts.SummaryItem(
                         t.title(), t.status().name(), t.priority().name(), t.dueAt()))
             .toList();
     var agendaItems =
-        agendas.list(workspace, 100, 0).stream()
+        agendas.list(workspace, PageRequest.of(0, 100)).getContent().stream()
             .map(a -> new AiContracts.SummaryItem(a.title(), a.status().name(), null, a.startsAt()))
             .toList();
     var summary =

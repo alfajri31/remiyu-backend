@@ -3,75 +3,42 @@ package id.remiyu.backend.repository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.remiyu.backend.dto.response.TaskView;
+import id.remiyu.backend.entity.TaskEntity;
+import id.remiyu.backend.model.enums.ReviewStatus;
 import id.remiyu.backend.model.enums.TaskPriority;
 import id.remiyu.backend.model.enums.TaskStatus;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import id.remiyu.backend.repository.jpa.TaskJpaRepository;
+import id.remiyu.backend.repository.specification.TaskSpecifications;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 @Repository
 @RequiredArgsConstructor
 public class TaskRepository {
-  private final JdbcClient jdbc;
+  private final TaskJpaRepository tasks;
   private final ObjectMapper mapper;
 
-  private TaskView map(ResultSet rs, int n) throws SQLException {
-    try {
-      return new TaskView(
-          rs.getObject("id", UUID.class),
-          rs.getObject("workspace_id", UUID.class),
-          rs.getObject("import_id", UUID.class),
-          rs.getString("title"),
-          rs.getString("description"),
-          rs.getString("assignee_name"),
-          rs.getObject("due_at", OffsetDateTime.class),
-          TaskPriority.valueOf(rs.getString("priority")),
-          TaskStatus.valueOf(rs.getString("status")),
-          rs.getBoolean("submitted"),
-          mapper.readValue(rs.getString("source_message_ids"), new TypeReference<List<UUID>>() {}),
-          rs.getObject("created_at", OffsetDateTime.class),
-          rs.getObject("updated_at", OffsetDateTime.class));
-    } catch (java.io.IOException e) {
-      throw new SQLException("Invalid stored source ids", e);
-    }
-  }
-
-  public List<TaskView> list(UUID workspace, TaskStatus status, int limit, long offset) {
-    return jdbc.sql(
-            "SELECT tasks.*, EXISTS (SELECT 1 FROM task_submissions s WHERE s.task_id=tasks.id) AS submitted FROM tasks WHERE workspace_id=:w"
-                + (status == null ? "" : " AND status=:status")
-                + " ORDER BY created_at DESC,id LIMIT :limit OFFSET :offset")
-        .param("w", workspace)
-        .params(status == null ? java.util.Map.of() : java.util.Map.of("status", status.name()))
-        .param("limit", limit)
-        .param("offset", offset)
-        .query(this::map)
-        .list();
-  }
-
-  public long count(UUID workspace, TaskStatus status) {
-    return jdbc.sql(
-            "SELECT count(*) FROM tasks WHERE workspace_id=:w"
-                + (status == null ? "" : " AND status=:status"))
-        .param("w", workspace)
-        .params(status == null ? java.util.Map.of() : java.util.Map.of("status", status.name()))
-        .query(Long.class)
-        .single();
+  public Page<TaskView> list(UUID workspace, TaskStatus status, Pageable pageable) {
+    Pageable sorted =
+        PageRequest.of(
+            pageable.getPageNumber(), pageable.getPageSize(), Sort.by("createdAt").descending());
+    return tasks
+        .findAll(
+            TaskSpecifications.workspaceId(workspace).and(TaskSpecifications.status(status)),
+            sorted)
+        .map(this::view);
   }
 
   public Optional<TaskView> get(UUID workspace, UUID id) {
-    return jdbc.sql(
-            "SELECT tasks.*, EXISTS (SELECT 1 FROM task_submissions s WHERE s.task_id=tasks.id) AS submitted FROM tasks WHERE workspace_id=:w AND id=:id")
-        .param("w", workspace)
-        .param("id", id)
-        .query(this::map)
-        .optional();
+    return tasks.findByIdAndWorkspaceId(id, workspace).map(this::view);
   }
 
   public UUID create(
@@ -84,29 +51,33 @@ public class TaskRepository {
       TaskPriority priority,
       TaskStatus status,
       List<UUID> sources) {
-    UUID id = UUID.randomUUID();
     try {
-      jdbc.sql(
-              "INSERT INTO tasks VALUES (:id,:w,:import,:title,:description,:assignee,:due,:priority,:status,:sources,:now,:now)")
-          .param("id", id)
-          .param("w", workspace)
-          .param("import", importId)
-          .param("title", title)
-          .param("description", description)
-          .param("assignee", assignee)
-          .param("due", due)
-          .param("priority", priority.name())
-          .param("status", status.name())
-          .param("sources", mapper.writeValueAsString(sources))
-          .param("now", OffsetDateTime.now())
-          .update();
-      return id;
+      OffsetDateTime now = OffsetDateTime.now();
+      return tasks
+          .save(
+              TaskEntity.builder()
+                  .id(UUID.randomUUID())
+                  .workspaceId(workspace)
+                  .importId(importId)
+                  .title(title)
+                  .description(description)
+                  .assigneeName(assignee)
+                  .dueAt(due)
+                  .priority(priority)
+                  .status(status)
+                  .sourceMessageIds(mapper.writeValueAsString(sources))
+                  .chatMessageId(sources.isEmpty() ? null : sources.getFirst())
+                  .reviewStatus(ReviewStatus.PENDING)
+                  .createdAt(now)
+                  .updatedAt(now)
+                  .build())
+          .getId();
     } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
       throw new IllegalStateException(e);
     }
   }
 
-  public void update(
+  public TaskView save(
       UUID workspace,
       UUID id,
       String title,
@@ -115,24 +86,39 @@ public class TaskRepository {
       OffsetDateTime due,
       TaskPriority priority,
       TaskStatus status) {
-    jdbc.sql(
-            "UPDATE tasks SET title=:title,description=:description,assignee_name=:assignee,due_at=:due,priority=:priority,status=:status,updated_at=:now WHERE id=:id AND workspace_id=:w")
-        .param("title", title)
-        .param("description", description)
-        .param("assignee", assignee)
-        .param("due", due)
-        .param("priority", priority.name())
-        .param("status", status.name())
-        .param("now", OffsetDateTime.now())
-        .param("id", id)
-        .param("w", workspace)
-        .update();
+    TaskEntity task = tasks.findByIdAndWorkspaceId(id, workspace).orElseThrow();
+    task.setTitle(title);
+    task.setDescription(description);
+    task.setAssigneeName(assignee);
+    task.setDueAt(due);
+    task.setPriority(priority);
+    task.setStatus(status);
+    task.setUpdatedAt(OffsetDateTime.now());
+    return view(tasks.save(task));
   }
 
   public void delete(UUID workspace, UUID id) {
-    jdbc.sql("DELETE FROM tasks WHERE id=:id AND workspace_id=:w")
-        .param("id", id)
-        .param("w", workspace)
-        .update();
+    tasks.findByIdAndWorkspaceId(id, workspace).ifPresent(tasks::delete);
+  }
+
+  private TaskView view(TaskEntity task) {
+    try {
+      return new TaskView(
+          task.getId(),
+          task.getWorkspaceId(),
+          task.getImportId(),
+          task.getTitle(),
+          task.getDescription(),
+          task.getAssigneeName(),
+          task.getDueAt(),
+          task.getPriority(),
+          task.getStatus(),
+          false,
+          mapper.readValue(task.getSourceMessageIds(), new TypeReference<List<UUID>>() {}),
+          task.getCreatedAt(),
+          task.getUpdatedAt());
+    } catch (java.io.IOException e) {
+      throw new IllegalStateException("Invalid stored source ids", e);
+    }
   }
 }

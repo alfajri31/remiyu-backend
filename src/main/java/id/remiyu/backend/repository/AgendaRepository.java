@@ -3,80 +3,88 @@ package id.remiyu.backend.repository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.remiyu.backend.dto.response.AgendaView;
+import id.remiyu.backend.entity.AgendaEntity;
 import id.remiyu.backend.model.enums.AgendaStatus;
-import java.sql.*;
+import id.remiyu.backend.repository.jpa.AgendaJpaRepository;
+import id.remiyu.backend.repository.specification.AgendaSpecifications;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 @Repository
 @RequiredArgsConstructor
 public class AgendaRepository {
-  private final JdbcClient jdbc;
+  private final AgendaJpaRepository agendas;
   private final ObjectMapper mapper;
 
-  private AgendaView map(ResultSet rs, int n) throws SQLException {
-    try {
-      return new AgendaView(
-          rs.getObject("id", UUID.class),
-          rs.getString("title"),
-          rs.getObject("starts_at", OffsetDateTime.class),
-          AgendaStatus.valueOf(rs.getString("status")),
-          mapper.readValue(rs.getString("source_message_ids"), new TypeReference<List<UUID>>() {}));
-    } catch (java.io.IOException e) {
-      throw new SQLException(e);
-    }
-  }
-
-  public List<AgendaView> list(UUID workspace, int limit, long offset) {
-    return jdbc.sql(
-            "SELECT * FROM agenda_entries WHERE workspace_id=:w ORDER BY starts_at NULLS LAST,id LIMIT :limit OFFSET :offset")
-        .param("w", workspace)
-        .param("limit", limit)
-        .param("offset", offset)
-        .query(this::map)
-        .list();
-  }
-
-  public long count(UUID workspace) {
-    return jdbc.sql("SELECT count(*) FROM agenda_entries WHERE workspace_id=:w")
-        .param("w", workspace)
-        .query(Long.class)
-        .single();
+  public Page<AgendaView> list(UUID workspace, Pageable pageable) {
+    Pageable sorted =
+        PageRequest.of(
+            pageable.getPageNumber(), pageable.getPageSize(), Sort.by("startsAt").ascending());
+    return agendas.findAll(AgendaSpecifications.workspaceId(workspace), sorted).map(this::view);
   }
 
   public Optional<AgendaView> get(UUID workspace, UUID id) {
-    return jdbc.sql("SELECT * FROM agenda_entries WHERE workspace_id=:w AND id=:id")
-        .param("w", workspace)
-        .param("id", id)
-        .query(this::map)
-        .optional();
+    return agendas.findByIdAndWorkspaceId(id, workspace).map(this::view);
   }
 
-  public void edit(UUID workspace, UUID id, String title, OffsetDateTime starts) {
-    jdbc.sql(
-            "UPDATE agenda_entries SET title=:title,starts_at=:starts WHERE workspace_id=:w AND id=:id")
-        .param("title", title)
-        .param("starts", starts)
-        .param("w", workspace)
-        .param("id", id)
-        .update();
+  public UUID create(
+      UUID workspace, UUID importId, String title, OffsetDateTime startsAt, List<UUID> sources) {
+    try {
+      return agendas
+          .save(
+              AgendaEntity.builder()
+                  .id(UUID.randomUUID())
+                  .workspaceId(workspace)
+                  .importId(importId)
+                  .title(title)
+                  .startsAt(startsAt)
+                  .status(AgendaStatus.DRAFT)
+                  .sourceMessageIds(mapper.writeValueAsString(sources))
+                  .chatMessageId(sources.isEmpty() ? null : sources.getFirst())
+                  .reviewStatus(id.remiyu.backend.model.enums.ReviewStatus.PENDING)
+                  .createdAt(OffsetDateTime.now())
+                  .build())
+          .getId();
+    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
-  public void confirm(UUID workspace, UUID id) {
-    jdbc.sql("UPDATE agenda_entries SET status=:status WHERE workspace_id=:w AND id=:id")
-        .param("status", AgendaStatus.CONFIRMED.name())
-        .param("w", workspace)
-        .param("id", id)
-        .update();
+  public AgendaView save(UUID workspace, UUID id, String title, OffsetDateTime startsAt) {
+    AgendaEntity agenda = agendas.findByIdAndWorkspaceId(id, workspace).orElseThrow();
+    agenda.setTitle(title);
+    agenda.setStartsAt(startsAt);
+    return view(agendas.save(agenda));
+  }
+
+  public AgendaView confirm(UUID workspace, UUID id) {
+    AgendaEntity agenda = agendas.findByIdAndWorkspaceId(id, workspace).orElseThrow();
+    agenda.setStatus(AgendaStatus.CONFIRMED);
+    return view(agendas.save(agenda));
   }
 
   public void delete(UUID workspace, UUID id) {
-    jdbc.sql("DELETE FROM agenda_entries WHERE workspace_id=:w AND id=:id")
-        .param("w", workspace)
-        .param("id", id)
-        .update();
+    agendas.findByIdAndWorkspaceId(id, workspace).ifPresent(agendas::delete);
+  }
+
+  private AgendaView view(AgendaEntity agenda) {
+    try {
+      return new AgendaView(
+          agenda.getId(),
+          agenda.getTitle(),
+          agenda.getStartsAt(),
+          agenda.getStatus(),
+          mapper.readValue(agenda.getSourceMessageIds(), new TypeReference<List<UUID>>() {}));
+    } catch (java.io.IOException e) {
+      throw new IllegalStateException("Invalid stored source ids", e);
+    }
   }
 }

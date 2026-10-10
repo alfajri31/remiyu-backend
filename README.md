@@ -16,7 +16,7 @@ Prasyarat: JDK 21, Maven 3.9+, Node.js/npm untuk Mockoon CLI, dan PostgreSQL. Da
 Default backend:
 - Backend: http://localhost:8081
 - Mockoon: http://localhost:3002
-- Database: jdbc:postgresql://localhost:5432/remiyu
+- Database lokal profile: jdbc:postgresql://fajris-mac-mini.tail2fab46.ts.net:5432/remiyu
 - Username lokal: postgres (role `postgre` tidak ditemukan pada mesin ini)
 - Password lokal mengikuti konfigurasi development pada `.env.example`
 
@@ -32,7 +32,7 @@ Terminal kedua:
 
 ```powershell
 $env:DB_USERNAME = 'postgres'
-$env:DB_PASSWORD = 'postgre'
+$env:DB_PASSWORD = 'postgres'
 .\scripts\start-backend.ps1
 ```
 
@@ -114,18 +114,72 @@ scripts/
 
 Controller hanya menangani HTTP/validasi dan memanggil Service. Service menangani aturan bisnis/akses dan transaksi; Repository menangani SQL melalui Spring JdbcClient. DTO request/response berada di package sendiri, sehingga Service tidak bergantung pada Controller. Record model internal tidak dipakai langsung sebagai response akun. Migration Flyway menjadi sumber schema database.
 
+## Status kerja dan review
+
+Status kerja menjelaskan progres operasional data. `review_status` terpisah untuk menunjukkan apakah hasil ekstraksi AI sudah diperiksa pengguna. Migration `V8__review_status.sql` memberi nilai awal `PENDING` untuk data lama dan baru.
+
+| Data | status | review_status |
+|---|---|---|
+| Task | TODO, IN_PROGRESS, DONE | PENDING, APPROVED, REJECTED |
+| Agenda | CONFIRMED, CANCELLED | PENDING, APPROVED, REJECTED |
+| Routine | ACTIVE, PAUSED | PENDING, APPROVED, REJECTED |
+
 ## Fondasi RAG
 
 Migration PostgreSQL `V6__rag_pgvector.sql` menyiapkan extension `pgvector` dan tabel `rag_chunks`. Tabel ini belum dipakai endpoint aplikasi: ia hanya menyiapkan penyimpanan chunk, metadata, dan embedding untuk RAG berikutnya. Setiap chunk wajib memiliki `user_id` dan `workspace_id`, sehingga retrieval nantinya selalu dapat dibatasi ke pemilik dan Workspace aktif. Dimensi `vector(1536)` ditetapkan untuk `text-embedding-3-small`; mengganti model berdimensi lain membutuhkan re-embedding/migration baru.
 
-Migration RAG sengaja opt-in karena server PostgreSQL wajib sudah memasang package `pgvector`; PostgreSQL lokal saat ini belum menyediakan extension `vector`. Setelah package terpasang, aktifkan migration saat menjalankan backend:
+### Instal pgvector pada PostgreSQL Windows
+
+Migration RAG sengaja opt-in: server PostgreSQL harus memasang binary `pgvector` terlebih dahulu. `CREATE EXTENSION` melalui Flyway hanya **mengaktifkan** extension pada database; ia tidak dapat memasang file `vector.dll` dan `vector.control` ke server PostgreSQL.
+
+Panduan berikut untuk PostgreSQL 16 pada Windows. Jalankan build dengan **x64 Native Tools Command Prompt for Visual Studio** yang sudah memiliki workload **Desktop development with C++** dan **Windows 10/11 SDK**. SDK diperlukan agar header `corecrt.h` tersedia.
+
+1. Pastikan versi server dan tentukan `PGROOT`. Versi binary pgvector harus mengikuti instalasi PostgreSQL yang menjalankan database `remiyu`, bukan versi Visual Studio.
+
+```cmd
+"C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres -d remiyu -c "SHOW server_version;"
+set "PGROOT=C:\Program Files\PostgreSQL\16"
+```
+
+2. Clone source pgvector dan build. Contoh ini memakai versi `0.8.7`.
+
+```cmd
+git clone --branch v0.8.7 https://github.com/pgvector/pgvector.git C:\Users\%USERNAME%\Projects\pgvector
+cd /d C:\Users\%USERNAME%\Projects\pgvector
+nmake /F Makefile.win
+```
+
+3. Tutup terminal tersebut. Buka kembali **x64 Native Tools Command Prompt** dengan **Run as administrator**, lalu set ulang environment dan install. Hak administrator dibutuhkan karena target berada di `C:\Program Files\PostgreSQL\16`.
+
+```cmd
+call "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64
+set "PGROOT=C:\Program Files\PostgreSQL\16"
+cd /d C:\Users\%USERNAME%\Projects\pgvector
+nmake /F Makefile.win install
+```
+
+Jika Visual Studio dipasang dengan edisi atau versi lain, sesuaikan path `VsDevCmd.bat`. Validasi hasil instalasi:
+
+```cmd
+dir "C:\Program Files\PostgreSQL\16\lib\vector.dll"
+dir "C:\Program Files\PostgreSQL\16\share\extension\vector.control"
+"C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres -d remiyu -c "SELECT name, default_version, installed_version FROM pg_available_extensions WHERE name = 'vector';"
+```
+
+Baris terakhir harus mengembalikan `vector`. Jangan membuat `vector.dll` secara manual atau menghapus `CREATE EXTENSION IF NOT EXISTS vector` dari migration V6.
+
+Setelah package tersedia, aktifkan migration PostgreSQL saat menjalankan backend:
 
 ```powershell
 $env:FLYWAY_LOCATIONS = 'classpath:db/migration,classpath:db/postgresql-migration'
 .\scripts\start-backend.ps1 -Profile local
 ```
 
-Flyway kemudian menjalankan `CREATE EXTENSION IF NOT EXISTS vector` dan membuat `rag_chunks`. Jangan mengaktifkan variable tersebut sebelum `SELECT * FROM pg_available_extensions WHERE name = 'vector';` mengembalikan baris.
+Flyway kemudian menjalankan `CREATE EXTENSION IF NOT EXISTS vector` dan membuat `rag_chunks`. Verifikasi extension aktif pada database `remiyu`:
+
+```powershell
+& "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres -d remiyu -c "SELECT extname, extversion FROM pg_extension WHERE extname = 'vector';"
+```
 
 ## Endpoint utama
 

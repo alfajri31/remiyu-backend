@@ -1,6 +1,5 @@
 package id.remiyu.backend.repository;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import id.remiyu.backend.dto.ai.AiContracts;
 import id.remiyu.backend.dto.response.ImportRunView;
 import id.remiyu.backend.model.ParsedChatMessage;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class ImportRepository {
   private final JdbcClient jdbc;
-  private final ObjectMapper mapper;
 
   public void lockWorkspace(UUID workspace) {
     jdbc.sql("SELECT id FROM workspaces WHERE id=:id FOR UPDATE")
@@ -94,24 +92,5 @@ public class ImportRepository {
                     rs.getObject("sent_at", OffsetDateTime.class),
                     rs.getString("content")))
         .list();
-  }
-
-  public UUID agenda(UUID workspace, UUID importId, AiContracts.AgendaDraft draft) {
-    UUID id = UUID.randomUUID();
-    try {
-      jdbc.sql(
-              "INSERT INTO agenda_entries VALUES (:id,:w,:import,:title,:starts,'DRAFT',:sources,:now)")
-          .param("id", id)
-          .param("w", workspace)
-          .param("import", importId)
-          .param("title", draft.title())
-          .param("starts", draft.startsAt())
-          .param("sources", mapper.writeValueAsString(draft.sourceMessageIds()))
-          .param("now", OffsetDateTime.now())
-          .update();
-      return id;
-    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-      throw new IllegalStateException(e);
-    }
   }
 }

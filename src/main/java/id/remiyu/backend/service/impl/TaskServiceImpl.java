@@ -30,18 +30,15 @@ public class TaskServiceImpl implements TaskService {
     if (pageable.getPageSize() > MAX_PAGE_SIZE) {
       throw ApiException.badRequest("Ukuran halaman maksimal " + MAX_PAGE_SIZE + ".");
     }
-    List<TaskView> content =
-        repository.list(workspace, status, pageable.getPageSize(), pageable.getOffset());
-    long total = repository.count(workspace, status);
-    int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / pageable.getPageSize());
+    var page = repository.list(workspace, status, pageable);
     return new PageResponse<>(
-        content,
-        pageable.getPageNumber(),
-        pageable.getPageSize(),
-        total,
-        totalPages,
-        pageable.getPageNumber() == 0,
-        totalPages == 0 || pageable.getPageNumber() + 1 >= totalPages);
+        page.getContent(),
+        page.getNumber(),
+        page.getSize(),
+        page.getTotalElements(),
+        page.getTotalPages(),
+        page.isFirst(),
+        page.isLast());
   }
 
   @Override
@@ -73,7 +70,7 @@ public class TaskServiceImpl implements TaskService {
   public TaskView edit(UUID user, UUID workspace, UUID id, TaskRequest body) {
     workspaces.requireAdmin(workspace, user);
     var task = get(user, workspace, id);
-    repository.update(
+    return repository.save(
         workspace,
         id,
         body.title().trim(),
@@ -82,7 +79,6 @@ public class TaskServiceImpl implements TaskService {
         body.dueAt(),
         body.priority(),
         task.status());
-    return repository.get(workspace, id).orElseThrow();
   }
 
   @Override
@@ -91,7 +87,7 @@ public class TaskServiceImpl implements TaskService {
     var task = get(user, workspace, id);
     if (task.status() == TaskStatus.DRAFT)
       throw ApiException.badRequest("Draft harus direview melalui confirm terlebih dahulu.");
-    repository.update(
+    return repository.save(
         workspace,
         id,
         task.title(),
@@ -100,7 +96,6 @@ public class TaskServiceImpl implements TaskService {
         task.dueAt(),
         task.priority(),
         status);
-    return repository.get(workspace, id).orElseThrow();
   }
 
   @Override
@@ -109,7 +104,7 @@ public class TaskServiceImpl implements TaskService {
     workspaces.requireAdmin(workspace, user);
     var task = get(user, workspace, id);
     if (task.status() != TaskStatus.DRAFT) throw ApiException.badRequest("Tugas bukan draft.");
-    repository.update(
+    return repository.save(
         workspace,
         id,
         task.title(),
@@ -118,7 +113,6 @@ public class TaskServiceImpl implements TaskService {
         task.dueAt(),
         task.priority(),
         TaskStatus.TODO);
-    return repository.get(workspace, id).orElseThrow();
   }
 
   @Override

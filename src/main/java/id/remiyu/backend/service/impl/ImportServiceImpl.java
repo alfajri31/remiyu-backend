@@ -7,6 +7,7 @@ import id.remiyu.backend.dto.response.ImportRunView;
 import id.remiyu.backend.integration.ai.AiGateway;
 import id.remiyu.backend.model.enums.ImportStatus;
 import id.remiyu.backend.model.enums.TaskStatus;
+import id.remiyu.backend.repository.AgendaRepository;
 import id.remiyu.backend.repository.ImportRepository;
 import id.remiyu.backend.repository.TaskRepository;
 import id.remiyu.backend.service.ImportService;
@@ -28,6 +29,7 @@ public class ImportServiceImpl implements ImportService {
   private final ImportFileReader reader;
   private final ImportRepository repository;
   private final TaskRepository tasks;
+  private final AgendaRepository agendas;
   private final AiGateway ai;
   private final String provider;
 
@@ -37,6 +39,7 @@ public class ImportServiceImpl implements ImportService {
       ImportFileReader reader,
       ImportRepository repository,
       TaskRepository tasks,
+      AgendaRepository agendas,
       AiGateway ai,
       @Value("${remiyu.ai.provider}") String provider) {
     this.workspaces = workspaces;
@@ -44,6 +47,7 @@ public class ImportServiceImpl implements ImportService {
     this.reader = reader;
     this.repository = repository;
     this.tasks = tasks;
+    this.agendas = agendas;
     this.ai = ai;
     this.provider = provider;
   }
@@ -97,7 +101,13 @@ public class ImportServiceImpl implements ImportService {
                           t.priority(),
                           TaskStatus.DRAFT,
                           t.sourceMessageIds())));
-      result.agendas().forEach(a -> agendaIds.add(repository.agenda(workspace, importId, a)));
+      result
+          .agendas()
+          .forEach(
+              a ->
+                  agendaIds.add(
+                      agendas.create(
+                          workspace, importId, a.title(), a.startsAt(), a.sourceMessageIds())));
     }
     return new ImportResultResponse(
         importId,

@@ -69,7 +69,6 @@ public class RoutineServiceImpl implements RoutineService {
   private RoutineView change(UUID user, UUID workspace, UUID routine, RoutineStatus status) {
     workspaces.requireAdmin(workspace, user);
     routines.get(workspace, routine).orElseThrow(ApiException::notFound);
-    routines.status(workspace, routine, status);
-    return routines.get(workspace, routine).orElseThrow(ApiException::notFound);
+    return routines.save(workspace, routine, status);
   }
 }
