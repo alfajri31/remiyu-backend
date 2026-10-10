@@ -26,6 +26,37 @@ hs_err_pid*
 replay_pid*
 *.hprof
 
+# Local database exports and restore artifacts. Flyway migrations remain tracked.
+backups/
+*.dump
+*.backup
+*.sql.gz
+
+# PostgreSQL client credentials stored on a developer machine
+.pgpass
+
+# Local archives, generated exports, and temporary working files
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+tmp/
+temp/
+.tmp/
+*.tmp
+*.temp
+*.bak
+*.orig
+
+# Tool caches and generated reports
+.mvn/timing.properties
+out/
+build/
+coverage/
+.scannerwork/
+
 # Operating system and editor temporary files
 .DS_Store
 Thumbs.db
@@ -34,7 +65,7 @@ Desktop.ini
 *.swo
 *~
 
-# Keep Maven wrapper files, source, migrations, Docker configuration,
-# Mockoon fixtures, and application.yml in version control.
+# Keep source, migrations, Docker configuration, Mockoon fixtures,
+# application.yml, and all Markdown documentation in version control.
+# Legacy Postman exports under docs are local-only; guides (*.md) stay tracked.
 docs/postman/*.json
-docs/postman/*.md
