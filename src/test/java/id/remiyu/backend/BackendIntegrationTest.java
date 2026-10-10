@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.*;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import org.junit.jupiter.api.*;
@@ -29,6 +31,7 @@ class BackendIntegrationTest {
   @Autowired ObjectMapper mapper;
   @Autowired JdbcClient jdbc;
   static final AtomicReference<String> mode = new AtomicReference<>("ok");
+  static final AtomicReference<String> aiUserId = new AtomicReference<>();
   static final AtomicInteger aiCalls = new AtomicInteger();
   static final HttpServer server;
 
@@ -41,6 +44,7 @@ class BackendIntegrationTest {
             aiCalls.incrementAndGet();
             var json = new ObjectMapper();
             var request = json.readTree(exchange.getRequestBody());
+            aiUserId.set(request.path("userId").asText());
             byte[] body;
             int status = 200;
             if (mode.get().equals("unavailable")) {
@@ -105,6 +109,7 @@ class BackendIntegrationTest {
             "auth_sessions",
             "app_users")) jdbc.sql("DELETE FROM " + table).update();
     mode.set("ok");
+    aiUserId.set(null);
     aiCalls.set(0);
   }
 
@@ -159,6 +164,64 @@ class BackendIntegrationTest {
 
   String imports(String workspace) {
     return "/api/v1/workspaces/" + workspace + "/imports";
+  }
+
+  @Test
+  void dashboardSummarizesAccessibleTasksAndAgendas() throws Exception {
+    var token = token();
+    var workspace = workspace(token);
+    var workspaceId = UUID.fromString(workspace);
+    var now = OffsetDateTime.now(ZoneId.of("Asia/Jakarta"));
+
+    mvc.perform(get("/api/v1/dashboard").header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.taskCount").value(0))
+        .andExpect(jsonPath("$.agendaCount").value(0))
+        .andExpect(jsonPath("$.prioritiesToday.high").value(0));
+
+    mvc.perform(
+            post("/api/v1/workspaces/" + workspace + "/tasks")
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .content(
+                    mapper.writeValueAsString(
+                        Map.of(
+                            "title", "Kirim proposal hari ini",
+                            "priority", "HIGH",
+                            "dueAt", now.plusHours(2).toString()))))
+        .andExpect(status().isCreated());
+
+    var importId = UUID.randomUUID();
+    jdbc.sql(
+            "INSERT INTO import_runs VALUES (:id,:workspace,:filename,:added,:duplicates,:provider,:status,:created)")
+        .param("id", importId)
+        .param("workspace", workspaceId)
+        .param("filename", "seed-dashboard.txt")
+        .param("added", 1)
+        .param("duplicates", 0)
+        .param("provider", "test")
+        .param("status", "NEEDS_REVIEW")
+        .param("created", now)
+        .update();
+    jdbc.sql(
+            "INSERT INTO agenda_entries VALUES (:id,:workspace,:import,:title,:starts,:status,:sources,:created)")
+        .param("id", UUID.randomUUID())
+        .param("workspace", workspaceId)
+        .param("import", importId)
+        .param("title", "Rapat koordinasi")
+        .param("starts", now.plusHours(3))
+        .param("status", "CONFIRMED")
+        .param("sources", "[]")
+        .param("created", now)
+        .update();
+
+    mvc.perform(get("/api/v1/dashboard").header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.taskCount").value(1))
+        .andExpect(jsonPath("$.agendaCount").value(1))
+        .andExpect(jsonPath("$.prioritiesToday.high").value(1))
+        .andExpect(jsonPath("$.nextTask.title").value("Kirim proposal hari ini"))
+        .andExpect(jsonPath("$.nextAgenda.title").value("Rapat koordinasi"));
   }
 
   @Test
@@ -315,6 +378,12 @@ class BackendIntegrationTest {
         .andExpect(jsonPath("$.duplicateMessages").value(2))
         .andExpect(jsonPath("$.taskIds").isEmpty());
     assertThat(aiCalls.get()).isEqualTo(1);
+    var ownerId =
+        jdbc.sql("SELECT owner_id FROM workspaces WHERE id = :id")
+            .param("id", UUID.fromString(workspace))
+            .query(UUID.class)
+            .single();
+    assertThat(aiUserId.get()).isEqualTo(ownerId.toString());
     var agenda = result.path("agendaIds").get(0).asText();
     mvc.perform(
             post(base + "/agendas/" + agenda + "/confirm")

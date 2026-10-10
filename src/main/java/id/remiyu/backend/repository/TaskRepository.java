@@ -3,24 +3,23 @@ package id.remiyu.backend.repository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.remiyu.backend.dto.response.TaskView;
+import id.remiyu.backend.model.enums.TaskPriority;
+import id.remiyu.backend.model.enums.TaskStatus;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 @Repository
+@RequiredArgsConstructor
 public class TaskRepository {
   private final JdbcClient jdbc;
   private final ObjectMapper mapper;
-
-  public TaskRepository(JdbcClient jdbc, ObjectMapper mapper) {
-    this.jdbc = jdbc;
-    this.mapper = mapper;
-  }
 
   private TaskView map(ResultSet rs, int n) throws SQLException {
     try {
@@ -32,8 +31,8 @@ public class TaskRepository {
           rs.getString("description"),
           rs.getString("assignee_name"),
           rs.getObject("due_at", OffsetDateTime.class),
-          rs.getString("priority"),
-          rs.getString("status"),
+          TaskPriority.valueOf(rs.getString("priority")),
+          TaskStatus.valueOf(rs.getString("status")),
           rs.getBoolean("submitted"),
           mapper.readValue(rs.getString("source_message_ids"), new TypeReference<List<UUID>>() {}),
           rs.getObject("created_at", OffsetDateTime.class),
@@ -43,17 +42,27 @@ public class TaskRepository {
     }
   }
 
-  public List<TaskView> list(UUID workspace, String status, int limit, int offset) {
+  public List<TaskView> list(UUID workspace, TaskStatus status, int limit, long offset) {
     return jdbc.sql(
             "SELECT tasks.*, EXISTS (SELECT 1 FROM task_submissions s WHERE s.task_id=tasks.id) AS submitted FROM tasks WHERE workspace_id=:w"
                 + (status == null ? "" : " AND status=:status")
                 + " ORDER BY created_at DESC,id LIMIT :limit OFFSET :offset")
         .param("w", workspace)
-        .params(status == null ? java.util.Map.of() : java.util.Map.of("status", status))
+        .params(status == null ? java.util.Map.of() : java.util.Map.of("status", status.name()))
         .param("limit", limit)
         .param("offset", offset)
         .query(this::map)
         .list();
+  }
+
+  public long count(UUID workspace, TaskStatus status) {
+    return jdbc.sql(
+            "SELECT count(*) FROM tasks WHERE workspace_id=:w"
+                + (status == null ? "" : " AND status=:status"))
+        .param("w", workspace)
+        .params(status == null ? java.util.Map.of() : java.util.Map.of("status", status.name()))
+        .query(Long.class)
+        .single();
   }
 
   public Optional<TaskView> get(UUID workspace, UUID id) {
@@ -72,8 +81,8 @@ public class TaskRepository {
       String description,
       String assignee,
       OffsetDateTime due,
-      String priority,
-      String status,
+      TaskPriority priority,
+      TaskStatus status,
       List<UUID> sources) {
     UUID id = UUID.randomUUID();
     try {
@@ -86,8 +95,8 @@ public class TaskRepository {
           .param("description", description)
           .param("assignee", assignee)
           .param("due", due)
-          .param("priority", priority)
-          .param("status", status)
+          .param("priority", priority.name())
+          .param("status", status.name())
           .param("sources", mapper.writeValueAsString(sources))
           .param("now", OffsetDateTime.now())
           .update();
@@ -104,16 +113,16 @@ public class TaskRepository {
       String description,
       String assignee,
       OffsetDateTime due,
-      String priority,
-      String status) {
+      TaskPriority priority,
+      TaskStatus status) {
     jdbc.sql(
             "UPDATE tasks SET title=:title,description=:description,assignee_name=:assignee,due_at=:due,priority=:priority,status=:status,updated_at=:now WHERE id=:id AND workspace_id=:w")
         .param("title", title)
         .param("description", description)
         .param("assignee", assignee)
         .param("due", due)
-        .param("priority", priority)
-        .param("status", status)
+        .param("priority", priority.name())
+        .param("status", status.name())
         .param("now", OffsetDateTime.now())
         .param("id", id)
         .param("w", workspace)

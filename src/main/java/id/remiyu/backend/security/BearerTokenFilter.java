@@ -8,18 +8,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
+@RequiredArgsConstructor
 public class BearerTokenFilter extends OncePerRequestFilter {
   private final AuthRepository repository;
-
-  public BearerTokenFilter(AuthRepository repository) {
-    this.repository = repository;
-  }
 
   @Override
   protected void doFilterInternal(

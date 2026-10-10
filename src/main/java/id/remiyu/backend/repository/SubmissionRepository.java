@@ -4,16 +4,14 @@ import id.remiyu.backend.dto.response.SubmissionView;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 @Repository
+@RequiredArgsConstructor
 public class SubmissionRepository {
   private final JdbcClient jdbc;
-
-  public SubmissionRepository(JdbcClient jdbc) {
-    this.jdbc = jdbc;
-  }
 
   public SubmissionView save(
       UUID task, UUID user, String link, String note, String filename, byte[] content) {

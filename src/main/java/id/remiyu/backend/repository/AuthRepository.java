@@ -5,16 +5,14 @@ import id.remiyu.backend.model.UserAccount;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 @Repository
+@RequiredArgsConstructor
 public class AuthRepository {
   private final JdbcClient jdbc;
-
-  public AuthRepository(JdbcClient jdbc) {
-    this.jdbc = jdbc;
-  }
 
   public Optional<UserAccount> byEmail(String email) {
     return jdbc.sql("SELECT id,name,email,password_hash FROM app_users WHERE email=:email")

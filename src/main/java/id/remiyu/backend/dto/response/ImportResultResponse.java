@@ -1,5 +1,6 @@
 package id.remiyu.backend.dto.response;
 
+import id.remiyu.backend.model.enums.ImportStatus;
 import jakarta.validation.constraints.*;
 import java.util.List;
 import java.util.UUID;
@@ -10,5 +11,5 @@ public record ImportResultResponse(
     int duplicateMessages,
     List<UUID> taskIds,
     List<UUID> agendaIds,
-    String status,
+    ImportStatus status,
     String aiProvider) {}

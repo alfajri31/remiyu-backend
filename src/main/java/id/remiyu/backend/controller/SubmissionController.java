@@ -5,6 +5,7 @@ import id.remiyu.backend.dto.response.UserView;
 import id.remiyu.backend.service.SubmissionService;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,12 +14,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/workspaces/{workspace}/tasks/{task}/submissions")
+@RequiredArgsConstructor
 public class SubmissionController {
   private final SubmissionService service;
-
-  public SubmissionController(SubmissionService service) {
-    this.service = service;
-  }
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   @ResponseStatus(HttpStatus.CREATED)

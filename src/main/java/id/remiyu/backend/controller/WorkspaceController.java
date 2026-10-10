@@ -10,18 +10,16 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/workspaces")
+@RequiredArgsConstructor
 public class WorkspaceController {
   private final WorkspaceService service;
-
-  public WorkspaceController(WorkspaceService service) {
-    this.service = service;
-  }
 
   @GetMapping
   public List<WorkspaceView> list(@AuthenticationPrincipal UserView user) {

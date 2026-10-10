@@ -3,21 +3,19 @@ package id.remiyu.backend.repository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.remiyu.backend.dto.response.AgendaView;
+import id.remiyu.backend.model.enums.AgendaStatus;
 import java.sql.*;
 import java.time.OffsetDateTime;
 import java.util.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 @Repository
+@RequiredArgsConstructor
 public class AgendaRepository {
   private final JdbcClient jdbc;
   private final ObjectMapper mapper;
-
-  public AgendaRepository(JdbcClient jdbc, ObjectMapper mapper) {
-    this.jdbc = jdbc;
-    this.mapper = mapper;
-  }
 
   private AgendaView map(ResultSet rs, int n) throws SQLException {
     try {
@@ -25,14 +23,14 @@ public class AgendaRepository {
           rs.getObject("id", UUID.class),
           rs.getString("title"),
           rs.getObject("starts_at", OffsetDateTime.class),
-          rs.getString("status"),
+          AgendaStatus.valueOf(rs.getString("status")),
           mapper.readValue(rs.getString("source_message_ids"), new TypeReference<List<UUID>>() {}));
     } catch (java.io.IOException e) {
       throw new SQLException(e);
     }
   }
 
-  public List<AgendaView> list(UUID workspace, int limit, int offset) {
+  public List<AgendaView> list(UUID workspace, int limit, long offset) {
     return jdbc.sql(
             "SELECT * FROM agenda_entries WHERE workspace_id=:w ORDER BY starts_at NULLS LAST,id LIMIT :limit OFFSET :offset")
         .param("w", workspace)
@@ -40,6 +38,13 @@ public class AgendaRepository {
         .param("offset", offset)
         .query(this::map)
         .list();
+  }
+
+  public long count(UUID workspace) {
+    return jdbc.sql("SELECT count(*) FROM agenda_entries WHERE workspace_id=:w")
+        .param("w", workspace)
+        .query(Long.class)
+        .single();
   }
 
   public Optional<AgendaView> get(UUID workspace, UUID id) {
@@ -61,7 +66,8 @@ public class AgendaRepository {
   }
 
   public void confirm(UUID workspace, UUID id) {
-    jdbc.sql("UPDATE agenda_entries SET status='CONFIRMED' WHERE workspace_id=:w AND id=:id")
+    jdbc.sql("UPDATE agenda_entries SET status=:status WHERE workspace_id=:w AND id=:id")
+        .param("status", AgendaStatus.CONFIRMED.name())
         .param("w", workspace)
         .param("id", id)
         .update();

@@ -1,6 +1,9 @@
 package id.remiyu.backend.dto.request;
 
-import jakarta.validation.constraints.*;
+import id.remiyu.backend.model.enums.TaskPriority;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 
 public record TaskRequest(
@@ -8,4 +11,4 @@ public record TaskRequest(
     @Size(max = 4000) String description,
     @Size(max = 100) String assigneeName,
     OffsetDateTime dueAt,
-    @NotBlank @Pattern(regexp = "LOW|MEDIUM|HIGH") String priority) {}
+    @NotNull TaskPriority priority) {}

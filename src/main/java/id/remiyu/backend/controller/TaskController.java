@@ -4,33 +4,35 @@ import id.remiyu.backend.dto.request.TaskRequest;
 import id.remiyu.backend.dto.request.TaskStatusRequest;
 import id.remiyu.backend.dto.response.TaskView;
 import id.remiyu.backend.dto.response.UserView;
+import id.remiyu.backend.model.enums.TaskStatus;
 import id.remiyu.backend.service.TaskService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/workspaces/{workspace}/tasks")
+@RequiredArgsConstructor
 public class TaskController {
   private final TaskService service;
-
-  public TaskController(TaskService service) {
-    this.service = service;
-  }
 
   @GetMapping
   public List<TaskView> list(
       @AuthenticationPrincipal UserView user,
       @PathVariable UUID workspace,
-      @RequestParam(required = false) @Pattern(regexp = "DRAFT|TODO|IN_PROGRESS|DONE")
-          String status,
+      @RequestParam(required = false) TaskStatus status,
       @RequestParam(defaultValue = "50") @Min(1) @Max(100) int limit,
       @RequestParam(defaultValue = "0") @Min(0) int offset) {
-    return service.list(user.id(), workspace, status, limit, offset);
+    if (offset % limit != 0) throw new IllegalArgumentException("offset harus kelipatan limit.");
+    return service
+        .list(user.id(), workspace, status, PageRequest.of(offset / limit, limit))
+        .getContent();
   }
 
   @GetMapping("/{id}")

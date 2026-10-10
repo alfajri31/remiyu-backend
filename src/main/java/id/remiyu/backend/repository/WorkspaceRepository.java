@@ -2,21 +2,23 @@ package id.remiyu.backend.repository;
 
 import id.remiyu.backend.dto.response.MemberView;
 import id.remiyu.backend.dto.response.WorkspaceView;
+import id.remiyu.backend.model.enums.BillingStatus;
+import id.remiyu.backend.model.enums.ConnectionStatus;
+import id.remiyu.backend.model.enums.Platform;
+import id.remiyu.backend.model.enums.WorkspaceRole;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 @Repository
+@RequiredArgsConstructor
 public class WorkspaceRepository {
   private final JdbcClient jdbc;
-
-  public WorkspaceRepository(JdbcClient jdbc) {
-    this.jdbc = jdbc;
-  }
 
   private static final String SELECT =
       "SELECT w.*, (SELECT count(*) FROM workspace_members m WHERE m.workspace_id=w.id) member_count FROM workspaces w ";
@@ -25,10 +27,10 @@ public class WorkspaceRepository {
     return new WorkspaceView(
         rs.getObject("id", UUID.class),
         rs.getString("name"),
-        rs.getString("platform"),
+        Platform.valueOf(rs.getString("platform")),
         rs.getString("account"),
-        rs.getString("connection_status"),
-        rs.getString("billing_status"),
+        ConnectionStatus.valueOf(rs.getString("connection_status")),
+        BillingStatus.valueOf(rs.getString("billing_status")),
         rs.getLong("member_count"),
         rs.getObject("created_at", OffsetDateTime.class));
   }
@@ -76,26 +78,27 @@ public class WorkspaceRepository {
   }
 
   public void insert(
-      UUID id, UUID owner, String name, String platform, String account, String billing) {
+      UUID id, UUID owner, String name, Platform platform, String account, BillingStatus billing) {
     jdbc.sql(
-            "INSERT INTO workspaces VALUES (:id,:owner,:name,:platform,:account,'NOT_CONNECTED',:billing,:invite,:now)")
+            "INSERT INTO workspaces VALUES (:id,:owner,:name,:platform,:account,:connection,:billing,:invite,:now)")
         .param("id", id)
         .param("owner", owner)
         .param("name", name)
-        .param("platform", platform)
+        .param("platform", platform.name())
         .param("account", account)
-        .param("billing", billing)
+        .param("connection", ConnectionStatus.NOT_CONNECTED.name())
+        .param("billing", billing.name())
         .param("invite", UUID.randomUUID())
         .param("now", OffsetDateTime.now())
         .update();
-    addMember(id, owner, "ADMIN");
+    addMember(id, owner, WorkspaceRole.ADMIN);
   }
 
-  public void addMember(UUID id, UUID user, String role) {
+  public void addMember(UUID id, UUID user, WorkspaceRole role) {
     jdbc.sql("INSERT INTO workspace_members VALUES (:id,:user,:role)")
         .param("id", id)
         .param("user", user)
-        .param("role", role)
+        .param("role", role.name())
         .update();
   }
 
@@ -127,7 +130,7 @@ public class WorkspaceRepository {
                     rs.getObject("id", UUID.class),
                     rs.getString("name"),
                     rs.getString("email"),
-                    rs.getString("role")))
+                    WorkspaceRole.valueOf(rs.getString("role"))))
         .list();
   }
 }

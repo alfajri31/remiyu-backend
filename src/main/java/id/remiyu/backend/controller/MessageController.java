@@ -6,17 +6,15 @@ import id.remiyu.backend.service.MessageService;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/workspaces/{workspace}/messages")
+@RequiredArgsConstructor
 public class MessageController {
   private final MessageService service;
-
-  public MessageController(MessageService service) {
-    this.service = service;
-  }
 
   @GetMapping
   public List<SourceMessageView> sources(

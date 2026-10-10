@@ -17,6 +17,8 @@ import org.springframework.web.client.RestClientException;
 public class HttpAiGateway implements AiGateway {
   private final RestClient client;
   private final String path;
+  private final String summaryPath;
+  private final String routinePath;
   private final Validator validator;
 
   public HttpAiGateway(
@@ -24,6 +26,8 @@ public class HttpAiGateway implements AiGateway {
       Validator validator,
       @Value("${remiyu.ai.base-url}") String baseUrl,
       @Value("${remiyu.ai.extract-path}") String path,
+      @Value("${remiyu.ai.summary-path}") String summaryPath,
+      @Value("${remiyu.ai.routine-path}") String routinePath,
       @Value("${remiyu.ai.api-key}") String apiKey,
       @Value("${remiyu.ai.connect-timeout}") Duration connect,
       @Value("${remiyu.ai.read-timeout}") Duration read) {
@@ -34,7 +38,44 @@ public class HttpAiGateway implements AiGateway {
     if (!apiKey.isBlank()) configured.defaultHeader("Authorization", "Bearer " + apiKey);
     this.client = configured.build();
     this.path = path;
+    this.summaryPath = summaryPath;
+    this.routinePath = routinePath;
     this.validator = validator;
+  }
+
+  @Override
+  public AiContracts.WorkspaceSummaryResponse summarize(
+      AiContracts.WorkspaceSummaryRequest request) {
+    var result = post(summaryPath, request, AiContracts.WorkspaceSummaryResponse.class);
+    if (result == null || !validator.validate(result).isEmpty()) throw invalid();
+    return result;
+  }
+
+  @Override
+  public AiContracts.RoutineSuggestionResponse detectRoutines(
+      AiContracts.RoutineSuggestionRequest request) {
+    var result = post(routinePath, request, AiContracts.RoutineSuggestionResponse.class);
+    if (result == null || !validator.validate(result).isEmpty()) throw invalid();
+    var ids = new HashSet<java.util.UUID>();
+    request.messages().forEach(message -> ids.add(message.id()));
+    if (result.routines().stream().anyMatch(routine -> !ids.contains(routine.sourceMessageId())))
+      throw invalid();
+    return result;
+  }
+
+  private <T> T post(String targetPath, Object body, Class<T> responseType) {
+    try {
+      return client
+          .post()
+          .uri(targetPath)
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(body)
+          .retrieve()
+          .body(responseType);
+    } catch (RestClientException e) {
+      throw new ApiException(
+          HttpStatus.BAD_GATEWAY, "Layanan AI tidak tersedia atau respons tidak valid.");
+    }
   }
 
   @Override

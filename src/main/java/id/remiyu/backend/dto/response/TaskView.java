@@ -1,5 +1,7 @@
 package id.remiyu.backend.dto.response;
 
+import id.remiyu.backend.model.enums.TaskPriority;
+import id.remiyu.backend.model.enums.TaskStatus;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -12,8 +14,8 @@ public record TaskView(
     String description,
     String assigneeName,
     OffsetDateTime dueAt,
-    String priority,
-    String status,
+    TaskPriority priority,
+    TaskStatus status,
     boolean submitted,
     List<UUID> sourceMessageIds,
     OffsetDateTime createdAt,

@@ -7,18 +7,16 @@ import id.remiyu.backend.dto.response.UserView;
 import id.remiyu.backend.service.AuthService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/auth")
+@RequiredArgsConstructor
 public class AuthController {
   private final AuthService service;
-
-  public AuthController(AuthService service) {
-    this.service = service;
-  }
 
   @PostMapping("/register")
   @ResponseStatus(HttpStatus.CREATED)

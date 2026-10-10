@@ -4,21 +4,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import id.remiyu.backend.dto.ai.AiContracts;
 import id.remiyu.backend.dto.response.ImportRunView;
 import id.remiyu.backend.model.ParsedChatMessage;
+import id.remiyu.backend.model.enums.ImportStatus;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 @Repository
+@RequiredArgsConstructor
 public class ImportRepository {
   private final JdbcClient jdbc;
   private final ObjectMapper mapper;
-
-  public ImportRepository(JdbcClient jdbc, ObjectMapper mapper) {
-    this.jdbc = jdbc;
-    this.mapper = mapper;
-  }
 
   public void lockWorkspace(UUID workspace) {
     jdbc.sql("SELECT id FROM workspaces WHERE id=:id FOR UPDATE")
@@ -59,7 +57,9 @@ public class ImportRepository {
         .param("added", added)
         .param("duplicates", duplicates)
         .param("provider", provider)
-        .param("status", added == 0 ? "NO_NEW_MESSAGES" : "NEEDS_REVIEW")
+        .param(
+            "status",
+            (added == 0 ? ImportStatus.NO_NEW_MESSAGES : ImportStatus.NEEDS_REVIEW).name())
         .param("now", OffsetDateTime.now())
         .update();
   }
@@ -77,8 +77,22 @@ public class ImportRepository {
                     rs.getInt("new_messages"),
                     rs.getInt("duplicate_messages"),
                     rs.getString("ai_provider"),
-                    rs.getString("status"),
+                    ImportStatus.valueOf(rs.getString("status")),
                     rs.getObject("created_at", OffsetDateTime.class)))
+        .list();
+  }
+
+  public List<AiContracts.Message> recentMessages(UUID workspace) {
+    return jdbc.sql(
+            "SELECT id,sender,sent_at,content FROM chat_messages WHERE workspace_id=:workspace ORDER BY sent_at DESC LIMIT 100")
+        .param("workspace", workspace)
+        .query(
+            (rs, row) ->
+                new AiContracts.Message(
+                    rs.getObject("id", UUID.class),
+                    rs.getString("sender"),
+                    rs.getObject("sent_at", OffsetDateTime.class),
+                    rs.getString("content")))
         .list();
   }
 

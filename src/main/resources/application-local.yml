@@ -1,0 +1,16 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/remiyu}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgre}
+
+remiyu:
+  ai:
+    base-url: ${AI_BASE_URL:http://localhost:3002}
+    provider: ${AI_PROVIDER:mockoon}
+  cors-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:8080}
+  seed:
+    enabled: ${SEED_ENABLED:true}

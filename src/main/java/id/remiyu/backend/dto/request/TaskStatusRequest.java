@@ -1,6 +1,6 @@
 package id.remiyu.backend.dto.request;
 
-import jakarta.validation.constraints.*;
+import id.remiyu.backend.model.enums.TaskStatus;
+import jakarta.validation.constraints.NotNull;
 
-public record TaskStatusRequest(
-    @NotBlank @Pattern(regexp = "TODO|IN_PROGRESS|DONE") String status) {}
+public record TaskStatusRequest(@NotNull TaskStatus status) {}

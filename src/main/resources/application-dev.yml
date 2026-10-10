@@ -1,0 +1,16 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+remiyu:
+  ai:
+    base-url: ${AI_BASE_URL:http://fajris-mac-mini.tail2fab46.ts.net/}
+    provider: ${AI_PROVIDER:fastapi-dev}
+  cors-origins: ${CORS_ORIGINS}
+  seed:
+    enabled: false

@@ -6,19 +6,19 @@ import id.remiyu.backend.dto.response.UserView;
 import id.remiyu.backend.service.AgendaService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/workspaces/{workspace}/agendas")
+@RequiredArgsConstructor
 public class AgendaController {
   private final AgendaService service;
-
-  public AgendaController(AgendaService service) {
-    this.service = service;
-  }
 
   @GetMapping
   public List<AgendaView> list(
@@ -26,7 +26,8 @@ public class AgendaController {
       @PathVariable UUID workspace,
       @RequestParam(defaultValue = "50") @Min(1) @Max(100) int limit,
       @RequestParam(defaultValue = "0") @Min(0) int offset) {
-    return service.list(user.id(), workspace, limit, offset);
+    if (offset % limit != 0) throw new IllegalArgumentException("offset harus kelipatan limit.");
+    return service.list(user.id(), workspace, PageRequest.of(offset / limit, limit)).getContent();
   }
 
   @PatchMapping("/{id}")
