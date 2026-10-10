@@ -105,13 +105,27 @@ src/main/java/id/remiyu/backend/
   common/
     exception/      exception dan handler error API
     util/           hashing
-src/main/resources/db/migration/
+src/main/resources/db/migration/       migration lintas database
+src/main/resources/db/postgresql-migration/  migration khusus PostgreSQL, misalnya pgvector/RAG
 mockoon/
 docs/
 scripts/
 ```
 
 Controller hanya menangani HTTP/validasi dan memanggil Service. Service menangani aturan bisnis/akses dan transaksi; Repository menangani SQL melalui Spring JdbcClient. DTO request/response berada di package sendiri, sehingga Service tidak bergantung pada Controller. Record model internal tidak dipakai langsung sebagai response akun. Migration Flyway menjadi sumber schema database.
+
+## Fondasi RAG
+
+Migration PostgreSQL `V6__rag_pgvector.sql` menyiapkan extension `pgvector` dan tabel `rag_chunks`. Tabel ini belum dipakai endpoint aplikasi: ia hanya menyiapkan penyimpanan chunk, metadata, dan embedding untuk RAG berikutnya. Setiap chunk wajib memiliki `user_id` dan `workspace_id`, sehingga retrieval nantinya selalu dapat dibatasi ke pemilik dan Workspace aktif. Dimensi `vector(1536)` ditetapkan untuk `text-embedding-3-small`; mengganti model berdimensi lain membutuhkan re-embedding/migration baru.
+
+Migration RAG sengaja opt-in karena server PostgreSQL wajib sudah memasang package `pgvector`; PostgreSQL lokal saat ini belum menyediakan extension `vector`. Setelah package terpasang, aktifkan migration saat menjalankan backend:
+
+```powershell
+$env:FLYWAY_LOCATIONS = 'classpath:db/migration,classpath:db/postgresql-migration'
+.\scripts\start-backend.ps1 -Profile local
+```
+
+Flyway kemudian menjalankan `CREATE EXTENSION IF NOT EXISTS vector` dan membuat `rag_chunks`. Jangan mengaktifkan variable tersebut sebelum `SELECT * FROM pg_available_extensions WHERE name = 'vector';` mengembalikan baris.
 
 ## Endpoint utama
 
@@ -177,7 +191,7 @@ Batas pilot: upload 1 MB, isi ZIP terurai maksimal 1 MB total, maksimal 100 entr
 - Integrasi platform, payment gateway, email verifikasi/reset password, push realtime, serta penggantian model di FastAPI belum diimplementasikan.
 - Flutter sudah terhubung untuk auth, Workspace/invitation/join, import/review tugas, agenda, dan unggah hasil tugas. Android emulator menggunakan `http://10.0.2.2:8081`; perangkat fisik memakai IP LAN komputer melalui `API_BASE_URL`. Token disimpan di secure storage jika user memilih Ingat saya.
 - Submission menyimpan tautan/catatan dan file maksimal 1 MB di PostgreSQL melalui migration V2; status tugas menjadi DONE dalam transaksi yang sama. Respons tugas memuat `submitted`. Endpoint daftar submission hanya menyediakan metadata, bukan isi file. Object storage, antivirus, download bukti, kuota total penyimpanan, dan idempotency key belum tersedia; ini implementasi pilot.
-- Uji build backend: 14 test lulus. Uji live repository Flutter ke PostgreSQL/Mockoon meliputi register, login session, Workspace, import, review, submission, deduplikasi, agenda, invitation, dan logout.
+- Test otomatis hanya mencakup parser chat dan pembaca file import. Pengujian endpoint, repository, PostgreSQL, dan Mockoon dilakukan manual melalui Postman atau smoke test pada environment lokal.
 
 ## Build dan test
 
@@ -193,7 +207,7 @@ Untuk trust store Windows pada mesin ini:
 mvn '-Djavax.net.ssl.trustStoreType=Windows-ROOT' '-Djavax.net.ssl.trustStore=NONE' test
 ```
 
-Test otomatis memakai database H2 terisolasi dan server HTTP fixture in-process; tidak mengubah PostgreSQL development. Jalankan smoke test setelah backend dan Mockoon hidup:
+Test otomatis tidak memakai database. Jalankan smoke test setelah backend dan Mockoon hidup untuk memverifikasi integrasi PostgreSQL secara manual:
 
 ```powershell
 .\scripts\smoke-test.ps1
