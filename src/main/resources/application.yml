@@ -17,6 +17,7 @@ spring:
       max-request-size: 2MB
   flyway:
     enabled: true
+    locations: ${FLYWAY_LOCATIONS:classpath:db/migration}
     placeholders:
       seed_enabled: ${remiyu.seed.enabled}
 management:
