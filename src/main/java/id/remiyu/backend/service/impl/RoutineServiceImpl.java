@@ -35,7 +35,7 @@ public class RoutineServiceImpl implements RoutineService {
     channels.requireAdmin(channel, user);
     var messages = imports.recentMessages(channel);
     if (messages.isEmpty()) return routines.list(channel);
-    ai.detectRoutines(new AiContracts.RoutineSuggestionRequest(channel, user, messages))
+    ai.extract(new AiContracts.ExtractionRequest(UUID.randomUUID(), channel, user, messages))
         .routines()
         .forEach(
             draft -> {

@@ -40,46 +40,17 @@
     {
       "uuid": "e0e2d1c4-41ce-4f6a-90d4-2d1f1dd2e621",
       "type": "http",
-      "documentation": "Ekstraksi tugas dari pesan channel.",
+      "documentation": "Deteksi tugas, agenda, dan rutinitas dalam satu batch pesan channel.",
       "method": "post",
-      "endpoint": "v1/tasks/extractions",
+      "endpoint": "v1/extractions",
       "responseMode": null,
       "responses": [
         {
           "uuid": "e0e2d1c4-41ce-4f6a-90d4-2d1f1dd2e622",
-          "body": "{\n  \"tasks\": [\n    {\n      \"title\": \"Kirim proposal klien\",\n      \"description\": \"Siapkan dan kirim proposal berdasarkan pembahasan channel.\",\n      \"assigneeName\": \"Budi\",\n      \"dueAt\": \"2026-10-05T17:00:00+07:00\",\n      \"priority\": \"HIGH\",\n      \"sourceMessageIds\": [\"{{body 'messages.0.id'}}\"]\n    }\n  ]\n}",
+          "body": "{\n  \"tasks\": [\n    {\n      \"title\": \"Kirim proposal klien\",\n      \"description\": \"Siapkan dan kirim proposal berdasarkan pembahasan channel.\",\n      \"assigneeName\": \"Budi\",\n      \"dueAt\": \"2026-10-05T17:00:00+07:00\",\n      \"priority\": \"HIGH\",\n      \"sourceMessageIds\": [\"{{body 'messages.0.id'}}\"]\n    }\n  ],\n  \"agendas\": [\n    {\n      \"title\": \"Review proposal bersama klien\",\n      \"startsAt\": \"2026-10-06T10:00:00+07:00\",\n      \"sourceMessageIds\": [\"{{body 'messages.0.id'}}\"]\n    }\n  ],\n  \"routines\": [\n    {\n      \"title\": \"Perbarui progres proposal\",\n      \"schedule\": \"Setiap hari kerja pukul 16.00\",\n      \"source\": \"Deteksi dari percakapan channel\",\n      \"quote\": \"Tolong kirim proposal klien hari ini.\",\n      \"sourceMessageId\": \"{{body 'messages.0.id'}}\"\n    }\n  ]\n}",
           "latency": 0,
           "statusCode": 200,
-          "label": "Task extraction",
-          "headers": [],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": true,
-          "crudKey": "id",
-          "callbacks": []
-        }
-      ]
-    },
-    {
-      "uuid": "e0e2d1c4-41ce-4f6a-90d4-2d1f1dd2e631",
-      "type": "http",
-      "documentation": "Ekstraksi agenda dari pesan channel.",
-      "method": "post",
-      "endpoint": "v1/agendas/extractions",
-      "responseMode": null,
-      "responses": [
-        {
-          "uuid": "e0e2d1c4-41ce-4f6a-90d4-2d1f1dd2e632",
-          "body": "{\n  \"agendas\": [\n    {\n      \"title\": \"Review proposal bersama klien\",\n      \"startsAt\": \"2026-10-06T10:00:00+07:00\",\n      \"sourceMessageIds\": [\"{{body 'messages.0.id'}}\"]\n    }\n  ]\n}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "Agenda extraction",
+          "label": "Combined extraction",
           "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
@@ -123,35 +94,6 @@
           "callbacks": []
         }
       ]
-    },
-    {
-      "uuid": "e0e2d1c4-41ce-4f6a-90d4-2d1f1dd2e651",
-      "type": "http",
-      "documentation": "Saran rutinitas AI.",
-      "method": "post",
-      "endpoint": "v1/routine-suggestions",
-      "responseMode": null,
-      "responses": [
-        {
-          "uuid": "e0e2d1c4-41ce-4f6a-90d4-2d1f1dd2e652",
-          "body": "{\n  \"routines\": [\n    {\n      \"title\": \"Perbarui progres proposal\",\n      \"schedule\": \"Setiap hari kerja pukul 16.00\",\n      \"source\": \"Deteksi dari percakapan channel\",\n      \"quote\": \"Tolong kirim proposal klien hari ini.\",\n      \"sourceMessageId\": \"{{body 'messages.0.id'}}\"\n    }\n  ]\n}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "Routine suggestion",
-          "headers": [],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": true,
-          "crudKey": "id",
-          "callbacks": []
-        }
-      ]
     }
   ],
   "rootChildren": [
@@ -165,15 +107,7 @@
     },
     {
       "type": "route",
-      "uuid": "e0e2d1c4-41ce-4f6a-90d4-2d1f1dd2e631"
-    },
-    {
-      "type": "route",
       "uuid": "e0e2d1c4-41ce-4f6a-90d4-2d1f1dd2e641"
-    },
-    {
-      "type": "route",
-      "uuid": "e0e2d1c4-41ce-4f6a-90d4-2d1f1dd2e651"
     }
   ],
   "proxyMode": false,

@@ -11,5 +11,6 @@ public record ImportResultResponse(
     int duplicateMessages,
     List<UUID> taskIds,
     List<UUID> agendaIds,
+    List<UUID> routineIds,
     ImportStatus status,
     String aiProvider) {}

@@ -9,6 +9,7 @@ import id.remiyu.backend.model.enums.ImportStatus;
 import id.remiyu.backend.model.enums.TaskStatus;
 import id.remiyu.backend.repository.AgendaRepository;
 import id.remiyu.backend.repository.ImportRepository;
+import id.remiyu.backend.repository.RoutineRepository;
 import id.remiyu.backend.repository.TaskRepository;
 import id.remiyu.backend.service.ChannelService;
 import id.remiyu.backend.service.ImportService;
@@ -30,6 +31,7 @@ public class ImportServiceImpl implements ImportService {
   private final ImportRepository repository;
   private final TaskRepository tasks;
   private final AgendaRepository agendas;
+  private final RoutineRepository routines;
   private final AiGateway ai;
   private final String provider;
 
@@ -40,6 +42,7 @@ public class ImportServiceImpl implements ImportService {
       ImportRepository repository,
       TaskRepository tasks,
       AgendaRepository agendas,
+      RoutineRepository routines,
       AiGateway ai,
       @Value("${remiyu.ai.provider}") String provider) {
     this.channels = channels;
@@ -48,6 +51,7 @@ public class ImportServiceImpl implements ImportService {
     this.repository = repository;
     this.tasks = tasks;
     this.agendas = agendas;
+    this.routines = routines;
     this.ai = ai;
     this.provider = provider;
   }
@@ -81,42 +85,45 @@ public class ImportServiceImpl implements ImportService {
     }
     var taskIds = new ArrayList<UUID>();
     var agendaIds = new ArrayList<UUID>();
+    var routineIds = new ArrayList<UUID>();
     if (!messages.isEmpty()) {
-      List<AiContracts.TaskDraft> extractedTasks;
-      List<AiContracts.AgendaDraft> extractedAgendas;
-      if (ai.supportsSplitExtraction()) {
-        extractedTasks =
-            ai.extractTasks(
-                    new AiContracts.TaskExtractionRequest(importId, channel, user, messages))
-                .tasks();
-        extractedAgendas =
-            ai.extractAgendas(
-                    new AiContracts.AgendaExtractionRequest(importId, channel, user, messages))
-                .agendas();
-      } else {
-        var result =
-            ai.extract(new AiContracts.ExtractionRequest(importId, channel, user, messages));
-        extractedTasks = result.tasks();
-        extractedAgendas = result.agendas();
-      }
-      extractedTasks.forEach(
-          t ->
-              taskIds.add(
-                  tasks.create(
-                      channel,
-                      importId,
-                      t.title(),
-                      t.description(),
-                      t.assigneeName(),
-                      t.dueAt(),
-                      t.priority(),
-                      TaskStatus.DRAFT,
-                      t.sourceMessageIds())));
-      extractedAgendas.forEach(
-          a ->
-              agendaIds.add(
-                  agendas.create(
-                      channel, importId, a.title(), a.startsAt(), a.sourceMessageIds())));
+      var result = ai.extract(new AiContracts.ExtractionRequest(importId, channel, user, messages));
+      result
+          .tasks()
+          .forEach(
+              t ->
+                  taskIds.add(
+                      tasks.create(
+                          channel,
+                          importId,
+                          t.title(),
+                          t.description(),
+                          t.assigneeName(),
+                          t.dueAt(),
+                          t.priority(),
+                          TaskStatus.DRAFT,
+                          t.sourceMessageIds())));
+      result
+          .agendas()
+          .forEach(
+              a ->
+                  agendaIds.add(
+                      agendas.create(
+                          channel, importId, a.title(), a.startsAt(), a.sourceMessageIds())));
+      result
+          .routines()
+          .forEach(
+              routine -> {
+                if (!routines.exists(channel, routine.title()))
+                  routineIds.add(
+                      routines.insert(
+                          channel,
+                          routine.title(),
+                          routine.schedule(),
+                          routine.source(),
+                          routine.quote(),
+                          routine.sourceMessageId()));
+              });
     }
     repository.completeRun(importId, messages.size(), duplicates);
     return new ImportResultResponse(
@@ -125,6 +132,7 @@ public class ImportServiceImpl implements ImportService {
         duplicates,
         taskIds,
         agendaIds,
+        routineIds,
         messages.isEmpty() ? ImportStatus.NO_NEW_MESSAGES : ImportStatus.NEEDS_REVIEW,
         provider);
   }

@@ -29,11 +29,12 @@ public class RoutineRepository {
     return routines.existsByChannelIdAndTitle(channel, title);
   }
 
-  public void insert(
+  public UUID insert(
       UUID channel, String title, String schedule, String source, String quote, UUID messageId) {
+    UUID id = UUID.randomUUID();
     routines.save(
         RoutineEntity.builder()
-            .id(UUID.randomUUID())
+            .id(id)
             .channelId(channel)
             .title(title)
             .schedule(schedule)
@@ -44,6 +45,7 @@ public class RoutineRepository {
             .reviewStatus(ReviewStatus.PENDING)
             .createdAt(OffsetDateTime.now())
             .build());
+    return id;
   }
 
   public Optional<RoutineView> get(UUID channel, UUID id) {

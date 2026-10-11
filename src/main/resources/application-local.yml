@@ -11,8 +11,6 @@ remiyu:
   ai:
     base-url: ${AI_BASE_URL:http://localhost:3002}
     provider: ${AI_PROVIDER:mockoon}
-    task-extract-path: ${AI_TASK_EXTRACT_PATH:/v1/tasks/extractions}
-    agenda-extract-path: ${AI_AGENDA_EXTRACT_PATH:/v1/agendas/extractions}
   cors-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:8080}
   seed:
     enabled: ${SEED_ENABLED:true}
