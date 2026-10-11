@@ -32,11 +32,14 @@ public class ImportRepository {
         > 0;
   }
 
-  public UUID message(UUID workspace, String key, ParsedChatMessage m) {
+  public UUID message(UUID workspace, UUID importId, String key, ParsedChatMessage m) {
     UUID id = UUID.randomUUID();
-    jdbc.sql("INSERT INTO chat_messages VALUES (:id,:w,:key,:sender,:sent,:content)")
+    jdbc.sql(
+            "INSERT INTO chat_messages (id,workspace_id,import_id,message_key,sender,sent_at,content) "
+                + "VALUES (:id,:w,:import,:key,:sender,:sent,:content)")
         .param("id", id)
         .param("w", workspace)
+        .param("import", importId)
         .param("key", key)
         .param("sender", m.sender())
         .param("sent", m.sentAt())
@@ -45,20 +48,30 @@ public class ImportRepository {
     return id;
   }
 
-  public void run(
-      UUID id, UUID workspace, String filename, int added, int duplicates, String provider) {
+  public void startRun(UUID id, UUID workspace, String filename, String provider) {
     jdbc.sql(
             "INSERT INTO import_runs VALUES (:id,:w,:filename,:added,:duplicates,:provider,:status,:now)")
         .param("id", id)
         .param("w", workspace)
         .param("filename", filename)
+        .param("added", 0)
+        .param("duplicates", 0)
+        .param("provider", provider)
+        .param(
+            "status", ImportStatus.NEEDS_REVIEW.name())
+        .param("now", OffsetDateTime.now())
+        .update();
+  }
+
+  public void completeRun(UUID id, int added, int duplicates) {
+    jdbc.sql(
+            "UPDATE import_runs SET new_messages=:added,duplicate_messages=:duplicates,status=:status WHERE id=:id")
+        .param("id", id)
         .param("added", added)
         .param("duplicates", duplicates)
-        .param("provider", provider)
         .param(
             "status",
             (added == 0 ? ImportStatus.NO_NEW_MESSAGES : ImportStatus.NEEDS_REVIEW).name())
-        .param("now", OffsetDateTime.now())
         .update();
   }
 

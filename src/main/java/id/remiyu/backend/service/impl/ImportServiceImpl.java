@@ -58,6 +58,12 @@ public class ImportServiceImpl implements ImportService {
     workspaces.requireAdmin(workspace, user);
     var parsed = parser.parse(reader.read(file));
     repository.lockWorkspace(workspace);
+    UUID importId = UUID.randomUUID();
+    String filename = file.getOriginalFilename() == null ? "chat.txt" : file.getOriginalFilename();
+    filename = filename.replace('\\', '/');
+    filename = filename.substring(filename.lastIndexOf('/') + 1);
+    if (filename.length() > 255) filename = filename.substring(filename.length() - 255);
+    repository.startRun(importId, workspace, filename, provider);
     var messages = new ArrayList<AiContracts.Message>();
     int duplicates = 0;
     for (var message : parsed) {
@@ -72,15 +78,9 @@ public class ImportServiceImpl implements ImportService {
         duplicates++;
         continue;
       }
-      UUID id = repository.message(workspace, key, message);
+      UUID id = repository.message(workspace, importId, key, message);
       messages.add(new AiContracts.Message(id, message.sender(), message.sentAt(), message.text()));
     }
-    UUID importId = UUID.randomUUID();
-    String filename = file.getOriginalFilename() == null ? "chat.txt" : file.getOriginalFilename();
-    filename = filename.replace('\\', '/');
-    filename = filename.substring(filename.lastIndexOf('/') + 1);
-    if (filename.length() > 255) filename = filename.substring(filename.length() - 255);
-    repository.run(importId, workspace, filename, messages.size(), duplicates, provider);
     var taskIds = new ArrayList<UUID>();
     var agendaIds = new ArrayList<UUID>();
     if (!messages.isEmpty()) {
@@ -109,6 +109,7 @@ public class ImportServiceImpl implements ImportService {
                       agendas.create(
                           workspace, importId, a.title(), a.startsAt(), a.sourceMessageIds())));
     }
+    repository.completeRun(importId, messages.size(), duplicates);
     return new ImportResultResponse(
         importId,
         messages.size(),
