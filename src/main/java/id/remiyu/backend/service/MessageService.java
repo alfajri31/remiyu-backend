@@ -5,5 +5,5 @@ import java.util.List;
 import java.util.UUID;
 
 public interface MessageService {
-  List<SourceMessageView> sources(UUID user, UUID workspace, List<UUID> ids);
+  List<SourceMessageView> sources(UUID user, UUID channel, List<UUID> ids);
 }

@@ -1,6 +1,6 @@
 package id.remiyu.backend.model.enums;
 
-public enum WorkspaceRole {
+public enum ChannelRole {
   ADMIN,
   MEMBER
 }

@@ -6,7 +6,7 @@ import id.remiyu.backend.model.enums.Platform;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-public record WorkspaceView(
+public record ChannelView(
     UUID id,
     String name,
     Platform platform,

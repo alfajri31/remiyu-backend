@@ -67,5 +67,11 @@ Desktop.ini
 
 # Keep source, migrations, Docker configuration, Mockoon fixtures,
 # application.yml, and all Markdown documentation in version control.
-# Legacy Postman exports under docs are local-only; guides (*.md) stay tracked.
+# Postman exports are local-only; guides (*.md) stay tracked.
+postman/
 docs/postman/*.json
+mockoon/remiyu-ai.json
+.env.dev.example
+.env.example
+.env.local.example
+.env.prod.example

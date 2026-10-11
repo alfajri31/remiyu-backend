@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public record ImportRunView(
     UUID id,
-    UUID workspaceId,
+    UUID channelId,
     String filename,
     int newMessages,
     int duplicateMessages,

@@ -26,23 +26,22 @@ public class TaskRepository {
   private final TaskJpaRepository tasks;
   private final ObjectMapper mapper;
 
-  public Page<TaskView> list(UUID workspace, TaskStatus status, Pageable pageable) {
+  public Page<TaskView> list(UUID channel, TaskStatus status, Pageable pageable) {
     Pageable sorted =
         PageRequest.of(
             pageable.getPageNumber(), pageable.getPageSize(), Sort.by("createdAt").descending());
     return tasks
         .findAll(
-            TaskSpecifications.workspaceId(workspace).and(TaskSpecifications.status(status)),
-            sorted)
+            TaskSpecifications.channelId(channel).and(TaskSpecifications.status(status)), sorted)
         .map(this::view);
   }
 
-  public Optional<TaskView> get(UUID workspace, UUID id) {
-    return tasks.findByIdAndWorkspaceId(id, workspace).map(this::view);
+  public Optional<TaskView> get(UUID channel, UUID id) {
+    return tasks.findByIdAndChannelId(id, channel).map(this::view);
   }
 
   public UUID create(
-      UUID workspace,
+      UUID channel,
       UUID importId,
       String title,
       String description,
@@ -57,7 +56,7 @@ public class TaskRepository {
           .save(
               TaskEntity.builder()
                   .id(UUID.randomUUID())
-                  .workspaceId(workspace)
+                  .channelId(channel)
                   .importId(importId)
                   .title(title)
                   .description(description)
@@ -78,7 +77,7 @@ public class TaskRepository {
   }
 
   public TaskView save(
-      UUID workspace,
+      UUID channel,
       UUID id,
       String title,
       String description,
@@ -86,7 +85,7 @@ public class TaskRepository {
       OffsetDateTime due,
       TaskPriority priority,
       TaskStatus status) {
-    TaskEntity task = tasks.findByIdAndWorkspaceId(id, workspace).orElseThrow();
+    TaskEntity task = tasks.findByIdAndChannelId(id, channel).orElseThrow();
     task.setTitle(title);
     task.setDescription(description);
     task.setAssigneeName(assignee);
@@ -97,15 +96,15 @@ public class TaskRepository {
     return view(tasks.save(task));
   }
 
-  public void delete(UUID workspace, UUID id) {
-    tasks.findByIdAndWorkspaceId(id, workspace).ifPresent(tasks::delete);
+  public void delete(UUID channel, UUID id) {
+    tasks.findByIdAndChannelId(id, channel).ifPresent(tasks::delete);
   }
 
   private TaskView view(TaskEntity task) {
     try {
       return new TaskView(
           task.getId(),
-          task.getWorkspaceId(),
+          task.getChannelId(),
           task.getImportId(),
           task.getTitle(),
           task.getDescription(),

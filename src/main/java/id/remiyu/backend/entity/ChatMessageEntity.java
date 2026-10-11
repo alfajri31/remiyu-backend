@@ -22,8 +22,8 @@ import lombok.Setter;
 public class ChatMessageEntity {
   @Id private UUID id;
 
-  @Column(name = "workspace_id", nullable = false)
-  private UUID workspaceId;
+  @Column(name = "channel_id", nullable = false)
+  private UUID channelId;
 
   @Column(name = "import_id")
   private UUID importId;

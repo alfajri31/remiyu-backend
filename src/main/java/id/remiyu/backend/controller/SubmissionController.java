@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/v1/workspaces/{workspace}/tasks/{task}/submissions")
+@RequestMapping("/api/v1/channels/{channel}/tasks/{task}/submissions")
 @RequiredArgsConstructor
 public class SubmissionController {
   private final SubmissionService service;
@@ -22,19 +22,17 @@ public class SubmissionController {
   @ResponseStatus(HttpStatus.CREATED)
   public SubmissionView submit(
       @AuthenticationPrincipal UserView user,
-      @PathVariable UUID workspace,
+      @PathVariable UUID channel,
       @PathVariable UUID task,
       @RequestParam(required = false) String link,
       @RequestParam(required = false) String note,
       @RequestPart(required = false) MultipartFile file) {
-    return service.submit(user.id(), workspace, task, link, note, file);
+    return service.submit(user.id(), channel, task, link, note, file);
   }
 
   @GetMapping
   public List<SubmissionView> list(
-      @AuthenticationPrincipal UserView user,
-      @PathVariable UUID workspace,
-      @PathVariable UUID task) {
-    return service.list(user.id(), workspace, task);
+      @AuthenticationPrincipal UserView user, @PathVariable UUID channel, @PathVariable UUID task) {
+    return service.list(user.id(), channel, task);
   }
 }

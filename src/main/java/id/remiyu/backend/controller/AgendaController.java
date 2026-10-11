@@ -15,7 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/workspaces/{workspace}/agendas")
+@RequestMapping("/api/v1/channels/{channel}/agendas")
 @RequiredArgsConstructor
 public class AgendaController {
   private final AgendaService service;
@@ -23,32 +23,32 @@ public class AgendaController {
   @GetMapping
   public List<AgendaView> list(
       @AuthenticationPrincipal UserView user,
-      @PathVariable UUID workspace,
+      @PathVariable UUID channel,
       @RequestParam(defaultValue = "50") @Min(1) @Max(100) int limit,
       @RequestParam(defaultValue = "0") @Min(0) int offset) {
     if (offset % limit != 0) throw new IllegalArgumentException("offset harus kelipatan limit.");
-    return service.list(user.id(), workspace, PageRequest.of(offset / limit, limit)).getContent();
+    return service.list(user.id(), channel, PageRequest.of(offset / limit, limit)).getContent();
   }
 
   @PatchMapping("/{id}")
   public AgendaView edit(
       @AuthenticationPrincipal UserView user,
-      @PathVariable UUID workspace,
+      @PathVariable UUID channel,
       @PathVariable UUID id,
       @Valid @RequestBody AgendaRequest body) {
-    return service.edit(user.id(), workspace, id, body.title(), body.startsAt());
+    return service.edit(user.id(), channel, id, body.title(), body.startsAt());
   }
 
   @PostMapping("/{id}/confirm")
   public AgendaView confirm(
-      @AuthenticationPrincipal UserView user, @PathVariable UUID workspace, @PathVariable UUID id) {
-    return service.confirm(user.id(), workspace, id);
+      @AuthenticationPrincipal UserView user, @PathVariable UUID channel, @PathVariable UUID id) {
+    return service.confirm(user.id(), channel, id);
   }
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(
-      @AuthenticationPrincipal UserView user, @PathVariable UUID workspace, @PathVariable UUID id) {
-    service.delete(user.id(), workspace, id);
+      @AuthenticationPrincipal UserView user, @PathVariable UUID channel, @PathVariable UUID id) {
+    service.delete(user.id(), channel, id);
   }
 }

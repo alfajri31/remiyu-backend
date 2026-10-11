@@ -24,8 +24,8 @@ public class SubmissionServiceImpl implements SubmissionService {
   @Override
   @Transactional
   public SubmissionView submit(
-      UUID user, UUID workspace, UUID task, String link, String note, MultipartFile file) {
-    var current = tasks.get(user, workspace, task);
+      UUID user, UUID channel, UUID task, String link, String note, MultipartFile file) {
+    var current = tasks.get(user, channel, task);
     if (current.status() == TaskStatus.DRAFT || current.status() == TaskStatus.DONE)
       throw ApiException.badRequest("Tugas harus dikonfirmasi dan belum selesai.");
     link = link == null || link.isBlank() ? null : link.trim();
@@ -45,13 +45,13 @@ public class SubmissionServiceImpl implements SubmissionService {
       }
     }
     var result = repository.save(task, user, link, note, filename, content);
-    tasks.status(user, workspace, task, TaskStatus.DONE);
+    tasks.status(user, channel, task, TaskStatus.DONE);
     return result;
   }
 
   @Override
-  public List<SubmissionView> list(UUID user, UUID workspace, UUID task) {
-    tasks.get(user, workspace, task);
+  public List<SubmissionView> list(UUID user, UUID channel, UUID task) {
+    tasks.get(user, channel, task);
     return repository.list(task);
   }
 

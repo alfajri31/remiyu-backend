@@ -15,7 +15,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class DashboardTaskView {
   private UUID id;
-  private UUID workspaceId;
+  private UUID channelId;
   private String title;
   private OffsetDateTime dueAt;
   private TaskPriority priority;

@@ -13,10 +13,10 @@ import org.springframework.stereotype.Repository;
 public class MessageRepository {
   private final JdbcClient jdbc;
 
-  public List<SourceMessageView> sources(UUID workspace, List<UUID> ids) {
+  public List<SourceMessageView> sources(UUID channel, List<UUID> ids) {
     return jdbc.sql(
-            "SELECT id,sender,sent_at,content FROM chat_messages WHERE workspace_id=:w AND id IN (:ids) ORDER BY sent_at")
-        .param("w", workspace)
+            "SELECT id,sender,sent_at,content FROM chat_messages WHERE channel_id=:w AND id IN (:ids) ORDER BY sent_at")
+        .param("w", channel)
         .param("ids", ids)
         .query(
             (rs, n) ->

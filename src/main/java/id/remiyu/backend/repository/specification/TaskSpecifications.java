@@ -8,8 +8,8 @@ import org.springframework.data.jpa.domain.Specification;
 public final class TaskSpecifications {
   private TaskSpecifications() {}
 
-  public static Specification<TaskEntity> workspaceId(UUID workspaceId) {
-    return (root, query, builder) -> builder.equal(root.get("workspaceId"), workspaceId);
+  public static Specification<TaskEntity> channelId(UUID channelId) {
+    return (root, query, builder) -> builder.equal(root.get("channelId"), channelId);
   }
 
   public static Specification<TaskEntity> status(TaskStatus status) {

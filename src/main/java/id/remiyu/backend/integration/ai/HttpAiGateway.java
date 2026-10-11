@@ -44,9 +44,8 @@ public class HttpAiGateway implements AiGateway {
   }
 
   @Override
-  public AiContracts.WorkspaceSummaryResponse summarize(
-      AiContracts.WorkspaceSummaryRequest request) {
-    var result = post(summaryPath, request, AiContracts.WorkspaceSummaryResponse.class);
+  public AiContracts.ChannelSummaryResponse summarize(AiContracts.ChannelSummaryRequest request) {
+    var result = post(summaryPath, request, AiContracts.ChannelSummaryResponse.class);
     if (result == null || !validator.validate(result).isEmpty()) throw invalid();
     return result;
   }

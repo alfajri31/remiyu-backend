@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public record TaskView(
     UUID id,
-    UUID workspaceId,
+    UUID channelId,
     UUID importId,
     String title,
     String description,

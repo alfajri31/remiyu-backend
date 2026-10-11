@@ -14,7 +14,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class DashboardAgendaView {
   private UUID id;
-  private UUID workspaceId;
+  private UUID channelId;
   private String title;
   private OffsetDateTime startsAt;
   private AgendaStatus status;

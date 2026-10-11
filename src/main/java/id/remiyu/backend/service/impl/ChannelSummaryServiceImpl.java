@@ -1,12 +1,12 @@
 package id.remiyu.backend.service.impl;
 
 import id.remiyu.backend.dto.ai.AiContracts;
-import id.remiyu.backend.dto.response.WorkspaceSummaryView;
+import id.remiyu.backend.dto.response.ChannelSummaryView;
 import id.remiyu.backend.integration.ai.AiGateway;
 import id.remiyu.backend.repository.AgendaRepository;
 import id.remiyu.backend.repository.TaskRepository;
-import id.remiyu.backend.service.WorkspaceService;
-import id.remiyu.backend.service.WorkspaceSummaryService;
+import id.remiyu.backend.service.ChannelService;
+import id.remiyu.backend.service.ChannelSummaryService;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class WorkspaceSummaryServiceImpl implements WorkspaceSummaryService {
-  private final WorkspaceService workspaces;
+public class ChannelSummaryServiceImpl implements ChannelSummaryService {
+  private final ChannelService channels;
   private final TaskRepository tasks;
   private final AgendaRepository agendas;
   private final AiGateway ai;
@@ -28,25 +28,25 @@ public class WorkspaceSummaryServiceImpl implements WorkspaceSummaryService {
 
   @Override
   @Transactional(readOnly = true)
-  public WorkspaceSummaryView generate(UUID user, UUID workspace) {
-    var view = workspaces.get(workspace, user);
+  public ChannelSummaryView generate(UUID user, UUID channel) {
+    var view = channels.get(channel, user);
     var taskItems =
-        tasks.list(workspace, null, PageRequest.of(0, 100)).getContent().stream()
+        tasks.list(channel, null, PageRequest.of(0, 100)).getContent().stream()
             .map(
                 t ->
                     new AiContracts.SummaryItem(
                         t.title(), t.status().name(), t.priority().name(), t.dueAt()))
             .toList();
     var agendaItems =
-        agendas.list(workspace, PageRequest.of(0, 100)).getContent().stream()
+        agendas.list(channel, PageRequest.of(0, 100)).getContent().stream()
             .map(a -> new AiContracts.SummaryItem(a.title(), a.status().name(), null, a.startsAt()))
             .toList();
     var summary =
         ai.summarize(
-            new AiContracts.WorkspaceSummaryRequest(
-                workspace, user, view.name(), taskItems, agendaItems));
-    return new WorkspaceSummaryView(
-        workspace,
+            new AiContracts.ChannelSummaryRequest(
+                channel, user, view.name(), taskItems, agendaItems));
+    return new ChannelSummaryView(
+        channel,
         summary.currentState(),
         summary.attention(),
         summary.nextSteps(),

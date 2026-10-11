@@ -7,8 +7,8 @@ import id.remiyu.backend.integration.ai.AiGateway;
 import id.remiyu.backend.model.enums.RoutineStatus;
 import id.remiyu.backend.repository.ImportRepository;
 import id.remiyu.backend.repository.RoutineRepository;
+import id.remiyu.backend.service.ChannelService;
 import id.remiyu.backend.service.RoutineService;
-import id.remiyu.backend.service.WorkspaceService;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -18,57 +18,57 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class RoutineServiceImpl implements RoutineService {
-  private final WorkspaceService workspaces;
+  private final ChannelService channels;
   private final RoutineRepository routines;
   private final ImportRepository imports;
   private final AiGateway ai;
 
   @Override
-  public List<RoutineView> list(UUID user, UUID workspace) {
-    workspaces.requireMember(workspace, user);
-    return routines.list(workspace);
+  public List<RoutineView> list(UUID user, UUID channel) {
+    channels.requireMember(channel, user);
+    return routines.list(channel);
   }
 
   @Override
   @Transactional
-  public List<RoutineView> detect(UUID user, UUID workspace) {
-    workspaces.requireAdmin(workspace, user);
-    var messages = imports.recentMessages(workspace);
-    if (messages.isEmpty()) return routines.list(workspace);
-    ai.detectRoutines(new AiContracts.RoutineSuggestionRequest(workspace, user, messages))
+  public List<RoutineView> detect(UUID user, UUID channel) {
+    channels.requireAdmin(channel, user);
+    var messages = imports.recentMessages(channel);
+    if (messages.isEmpty()) return routines.list(channel);
+    ai.detectRoutines(new AiContracts.RoutineSuggestionRequest(channel, user, messages))
         .routines()
         .forEach(
             draft -> {
-              if (!routines.exists(workspace, draft.title()))
+              if (!routines.exists(channel, draft.title()))
                 routines.insert(
-                    workspace,
+                    channel,
                     draft.title(),
                     draft.schedule(),
                     draft.source(),
                     draft.quote(),
                     draft.sourceMessageId());
             });
-    return routines.list(workspace);
+    return routines.list(channel);
   }
 
   @Override
-  public RoutineView activate(UUID user, UUID workspace, UUID routine) {
-    return change(user, workspace, routine, RoutineStatus.ACTIVE);
+  public RoutineView activate(UUID user, UUID channel, UUID routine) {
+    return change(user, channel, routine, RoutineStatus.ACTIVE);
   }
 
   @Override
-  public RoutineView pause(UUID user, UUID workspace, UUID routine) {
-    return change(user, workspace, routine, RoutineStatus.PAUSED);
+  public RoutineView pause(UUID user, UUID channel, UUID routine) {
+    return change(user, channel, routine, RoutineStatus.PAUSED);
   }
 
   @Override
-  public RoutineView dismiss(UUID user, UUID workspace, UUID routine) {
-    return change(user, workspace, routine, RoutineStatus.DISMISSED);
+  public RoutineView dismiss(UUID user, UUID channel, UUID routine) {
+    return change(user, channel, routine, RoutineStatus.DISMISSED);
   }
 
-  private RoutineView change(UUID user, UUID workspace, UUID routine, RoutineStatus status) {
-    workspaces.requireAdmin(workspace, user);
-    routines.get(workspace, routine).orElseThrow(ApiException::notFound);
-    return routines.save(workspace, routine, status);
+  private RoutineView change(UUID user, UUID channel, UUID routine, RoutineStatus status) {
+    channels.requireAdmin(channel, user);
+    routines.get(channel, routine).orElseThrow(ApiException::notFound);
+    return routines.save(channel, routine, status);
   }
 }

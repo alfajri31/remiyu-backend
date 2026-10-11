@@ -7,7 +7,7 @@ import java.util.UUID;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface ImportService {
-  ImportResultResponse upload(UUID user, UUID workspace, MultipartFile file);
+  ImportResultResponse upload(UUID user, UUID channel, MultipartFile file);
 
-  List<ImportRunView> list(UUID user, UUID workspace);
+  List<ImportRunView> list(UUID user, UUID channel);
 }

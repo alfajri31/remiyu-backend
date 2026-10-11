@@ -17,8 +17,8 @@ import lombok.*;
 public class AgendaEntity {
   @Id private UUID id;
 
-  @Column(name = "workspace_id", nullable = false)
-  private UUID workspaceId;
+  @Column(name = "channel_id", nullable = false)
+  private UUID channelId;
 
   @Column(name = "import_id", nullable = false)
   private UUID importId;

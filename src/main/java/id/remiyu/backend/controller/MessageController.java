@@ -11,7 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/workspaces/{workspace}/messages")
+@RequestMapping("/api/v1/channels/{channel}/messages")
 @RequiredArgsConstructor
 public class MessageController {
   private final MessageService service;
@@ -19,8 +19,8 @@ public class MessageController {
   @GetMapping
   public List<SourceMessageView> sources(
       @AuthenticationPrincipal UserView user,
-      @PathVariable UUID workspace,
+      @PathVariable UUID channel,
       @RequestParam @Size(min = 1, max = 100) List<UUID> ids) {
-    return service.sources(user.id(), workspace, ids);
+    return service.sources(user.id(), channel, ids);
   }
 }

@@ -8,17 +8,17 @@ import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 
 public interface TaskService {
-  PageResponse<TaskView> list(UUID user, UUID workspace, TaskStatus status, Pageable pageable);
+  PageResponse<TaskView> list(UUID user, UUID channel, TaskStatus status, Pageable pageable);
 
-  TaskView get(UUID user, UUID workspace, UUID id);
+  TaskView get(UUID user, UUID channel, UUID id);
 
-  TaskView create(UUID user, UUID workspace, TaskRequest body);
+  TaskView create(UUID user, UUID channel, TaskRequest body);
 
-  TaskView edit(UUID user, UUID workspace, UUID id, TaskRequest body);
+  TaskView edit(UUID user, UUID channel, UUID id, TaskRequest body);
 
-  TaskView status(UUID user, UUID workspace, UUID id, TaskStatus status);
+  TaskView status(UUID user, UUID channel, UUID id, TaskStatus status);
 
-  TaskView confirm(UUID user, UUID workspace, UUID id);
+  TaskView confirm(UUID user, UUID channel, UUID id);
 
-  void delete(UUID user, UUID workspace, UUID id);
+  void delete(UUID user, UUID channel, UUID id);
 }

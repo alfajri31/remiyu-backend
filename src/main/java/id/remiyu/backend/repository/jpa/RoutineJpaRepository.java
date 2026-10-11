@@ -8,10 +8,10 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RoutineJpaRepository extends JpaRepository<RoutineEntity, UUID> {
-  List<RoutineEntity> findByWorkspaceIdAndStatusNotOrderByCreatedAtDesc(
-      UUID workspaceId, RoutineStatus status);
+  List<RoutineEntity> findByChannelIdAndStatusNotOrderByCreatedAtDesc(
+      UUID channelId, RoutineStatus status);
 
-  boolean existsByWorkspaceIdAndTitle(UUID workspaceId, String title);
+  boolean existsByChannelIdAndTitle(UUID channelId, String title);
 
-  Optional<RoutineEntity> findByIdAndWorkspaceId(UUID id, UUID workspaceId);
+  Optional<RoutineEntity> findByIdAndChannelId(UUID id, UUID channelId);
 }

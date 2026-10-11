@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/v1/workspaces/{workspace}/imports")
+@RequestMapping("/api/v1/channels/{channel}/imports")
 @RequiredArgsConstructor
 public class ImportController {
   private final ImportService service;
@@ -23,14 +23,14 @@ public class ImportController {
   @ResponseStatus(HttpStatus.CREATED)
   public ImportResultResponse upload(
       @AuthenticationPrincipal UserView user,
-      @PathVariable UUID workspace,
+      @PathVariable UUID channel,
       @RequestPart("file") MultipartFile file) {
-    return service.upload(user.id(), workspace, file);
+    return service.upload(user.id(), channel, file);
   }
 
   @GetMapping
   public List<ImportRunView> list(
-      @AuthenticationPrincipal UserView user, @PathVariable UUID workspace) {
-    return service.list(user.id(), workspace);
+      @AuthenticationPrincipal UserView user, @PathVariable UUID channel) {
+    return service.list(user.id(), channel);
   }
 }

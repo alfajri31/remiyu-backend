@@ -13,7 +13,7 @@ public final class AiContracts {
   public record Message(UUID id, String sender, OffsetDateTime sentAt, String text) {}
 
   public record ExtractionRequest(
-      UUID requestId, UUID workspaceId, UUID userId, List<Message> messages) {}
+      UUID requestId, UUID channelId, UUID userId, List<Message> messages) {}
 
   public record TaskDraft(
       @NotBlank @Size(max = 200) String title,
@@ -34,19 +34,19 @@ public final class AiContracts {
 
   public record SummaryItem(String title, String status, String priority, OffsetDateTime at) {}
 
-  public record WorkspaceSummaryRequest(
-      UUID workspaceId,
+  public record ChannelSummaryRequest(
+      UUID channelId,
       UUID userId,
-      String workspaceName,
+      String channelName,
       List<SummaryItem> tasks,
       List<SummaryItem> agendas) {}
 
-  public record WorkspaceSummaryResponse(
+  public record ChannelSummaryResponse(
       @NotBlank @Size(max = 2000) String currentState,
       @NotBlank @Size(max = 2000) String attention,
       @NotBlank @Size(max = 2000) String nextSteps) {}
 
-  public record RoutineSuggestionRequest(UUID workspaceId, UUID userId, List<Message> messages) {}
+  public record RoutineSuggestionRequest(UUID channelId, UUID userId, List<Message> messages) {}
 
   public record RoutineDraft(
       @NotBlank @Size(max = 200) String title,

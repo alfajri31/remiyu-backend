@@ -10,8 +10,8 @@ import id.remiyu.backend.model.enums.TaskStatus;
 import id.remiyu.backend.repository.AgendaRepository;
 import id.remiyu.backend.repository.ImportRepository;
 import id.remiyu.backend.repository.TaskRepository;
+import id.remiyu.backend.service.ChannelService;
 import id.remiyu.backend.service.ImportService;
-import id.remiyu.backend.service.WorkspaceService;
 import id.remiyu.backend.support.importchat.ImportFileReader;
 import id.remiyu.backend.support.importchat.WhatsAppParser;
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class ImportServiceImpl implements ImportService {
-  private final WorkspaceService workspaces;
+  private final ChannelService channels;
   private final WhatsAppParser parser;
   private final ImportFileReader reader;
   private final ImportRepository repository;
@@ -34,7 +34,7 @@ public class ImportServiceImpl implements ImportService {
   private final String provider;
 
   public ImportServiceImpl(
-      WorkspaceService workspaces,
+      ChannelService channels,
       WhatsAppParser parser,
       ImportFileReader reader,
       ImportRepository repository,
@@ -42,7 +42,7 @@ public class ImportServiceImpl implements ImportService {
       AgendaRepository agendas,
       AiGateway ai,
       @Value("${remiyu.ai.provider}") String provider) {
-    this.workspaces = workspaces;
+    this.channels = channels;
     this.parser = parser;
     this.reader = reader;
     this.repository = repository;
@@ -54,16 +54,16 @@ public class ImportServiceImpl implements ImportService {
 
   @Override
   @Transactional
-  public ImportResultResponse upload(UUID user, UUID workspace, MultipartFile file) {
-    workspaces.requireAdmin(workspace, user);
+  public ImportResultResponse upload(UUID user, UUID channel, MultipartFile file) {
+    channels.requireAdmin(channel, user);
     var parsed = parser.parse(reader.read(file));
-    repository.lockWorkspace(workspace);
+    repository.lockChannel(channel);
     UUID importId = UUID.randomUUID();
     String filename = file.getOriginalFilename() == null ? "chat.txt" : file.getOriginalFilename();
     filename = filename.replace('\\', '/');
     filename = filename.substring(filename.lastIndexOf('/') + 1);
     if (filename.length() > 255) filename = filename.substring(filename.length() - 255);
-    repository.startRun(importId, workspace, filename, provider);
+    repository.startRun(importId, channel, filename, provider);
     var messages = new ArrayList<AiContracts.Message>();
     int duplicates = 0;
     for (var message : parsed) {
@@ -74,25 +74,24 @@ public class ImportServiceImpl implements ImportService {
                   + message.sender()
                   + "\u001f"
                   + message.text());
-      if (repository.contains(workspace, key)) {
+      if (repository.contains(channel, key)) {
         duplicates++;
         continue;
       }
-      UUID id = repository.message(workspace, importId, key, message);
+      UUID id = repository.message(channel, importId, key, message);
       messages.add(new AiContracts.Message(id, message.sender(), message.sentAt(), message.text()));
     }
     var taskIds = new ArrayList<UUID>();
     var agendaIds = new ArrayList<UUID>();
     if (!messages.isEmpty()) {
-      var result =
-          ai.extract(new AiContracts.ExtractionRequest(importId, workspace, user, messages));
+      var result = ai.extract(new AiContracts.ExtractionRequest(importId, channel, user, messages));
       result
           .tasks()
           .forEach(
               t ->
                   taskIds.add(
                       tasks.create(
-                          workspace,
+                          channel,
                           importId,
                           t.title(),
                           t.description(),
@@ -107,7 +106,7 @@ public class ImportServiceImpl implements ImportService {
               a ->
                   agendaIds.add(
                       agendas.create(
-                          workspace, importId, a.title(), a.startsAt(), a.sourceMessageIds())));
+                          channel, importId, a.title(), a.startsAt(), a.sourceMessageIds())));
     }
     repository.completeRun(importId, messages.size(), duplicates);
     return new ImportResultResponse(
@@ -121,8 +120,8 @@ public class ImportServiceImpl implements ImportService {
   }
 
   @Override
-  public List<ImportRunView> list(UUID user, UUID workspace) {
-    workspaces.requireMember(workspace, user);
-    return repository.list(workspace);
+  public List<ImportRunView> list(UUID user, UUID channel) {
+    channels.requireMember(channel, user);
+    return repository.list(channel);
   }
 }

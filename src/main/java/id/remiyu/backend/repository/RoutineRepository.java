@@ -17,24 +17,24 @@ import org.springframework.stereotype.Repository;
 public class RoutineRepository {
   private final RoutineJpaRepository routines;
 
-  public List<RoutineView> list(UUID workspace) {
+  public List<RoutineView> list(UUID channel) {
     return routines
-        .findByWorkspaceIdAndStatusNotOrderByCreatedAtDesc(workspace, RoutineStatus.DISMISSED)
+        .findByChannelIdAndStatusNotOrderByCreatedAtDesc(channel, RoutineStatus.DISMISSED)
         .stream()
         .map(this::view)
         .toList();
   }
 
-  public boolean exists(UUID workspace, String title) {
-    return routines.existsByWorkspaceIdAndTitle(workspace, title);
+  public boolean exists(UUID channel, String title) {
+    return routines.existsByChannelIdAndTitle(channel, title);
   }
 
   public void insert(
-      UUID workspace, String title, String schedule, String source, String quote, UUID messageId) {
+      UUID channel, String title, String schedule, String source, String quote, UUID messageId) {
     routines.save(
         RoutineEntity.builder()
             .id(UUID.randomUUID())
-            .workspaceId(workspace)
+            .channelId(channel)
             .title(title)
             .schedule(schedule)
             .source(source)
@@ -46,12 +46,12 @@ public class RoutineRepository {
             .build());
   }
 
-  public Optional<RoutineView> get(UUID workspace, UUID id) {
-    return routines.findByIdAndWorkspaceId(id, workspace).map(this::view);
+  public Optional<RoutineView> get(UUID channel, UUID id) {
+    return routines.findByIdAndChannelId(id, channel).map(this::view);
   }
 
-  public RoutineView save(UUID workspace, UUID id, RoutineStatus status) {
-    RoutineEntity routine = routines.findByIdAndWorkspaceId(id, workspace).orElseThrow();
+  public RoutineView save(UUID channel, UUID id, RoutineStatus status) {
+    RoutineEntity routine = routines.findByIdAndChannelId(id, channel).orElseThrow();
     routine.setStatus(status);
     return view(routines.save(routine));
   }

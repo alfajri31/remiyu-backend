@@ -24,7 +24,7 @@ public class DashboardRepository {
 
   public long countActiveTasks(UUID userId, OffsetDateTime startsAt, OffsetDateTime endsAt) {
     return jdbc.sql(
-            "SELECT count(*) FROM tasks t JOIN workspace_members m ON m.workspace_id=t.workspace_id "
+            "SELECT count(*) FROM tasks t JOIN channels_members m ON m.channel_id=t.channel_id "
                 + "WHERE m.user_id=:user AND t.status IN "
                 + ACTIVE_TASKS
                 + " AND t.due_at>=:start AND t.due_at<:end")
@@ -37,7 +37,7 @@ public class DashboardRepository {
 
   public long countConfirmedAgendas(UUID userId, OffsetDateTime startsAt, OffsetDateTime endsAt) {
     return jdbc.sql(
-            "SELECT count(*) FROM agenda_entries a JOIN workspace_members m ON m.workspace_id=a.workspace_id "
+            "SELECT count(*) FROM agenda_entries a JOIN channels_members m ON m.channel_id=a.channel_id "
                 + "WHERE m.user_id=:user AND a.status="
                 + CONFIRMED_AGENDAS
                 + " AND a.starts_at>=:start AND a.starts_at<:end")
@@ -52,7 +52,7 @@ public class DashboardRepository {
       UUID userId, OffsetDateTime startsAt, OffsetDateTime endsAt) {
     Map<TaskPriority, Long> counts = new EnumMap<>(TaskPriority.class);
     jdbc.sql(
-            "SELECT t.priority, count(*) AS total FROM tasks t JOIN workspace_members m ON m.workspace_id=t.workspace_id "
+            "SELECT t.priority, count(*) AS total FROM tasks t JOIN channels_members m ON m.channel_id=t.channel_id "
                 + "WHERE m.user_id=:user AND t.status IN "
                 + ACTIVE_TASKS
                 + " AND t.due_at>=:start AND t.due_at<:end GROUP BY t.priority")
@@ -69,8 +69,8 @@ public class DashboardRepository {
 
   public Optional<DashboardTaskView> nextTask(UUID userId, OffsetDateTime now) {
     return jdbc.sql(
-            "SELECT t.id,t.workspace_id,t.title,t.due_at,t.priority,t.status FROM tasks t "
-                + "JOIN workspace_members m ON m.workspace_id=t.workspace_id "
+            "SELECT t.id,t.channel_id,t.title,t.due_at,t.priority,t.status FROM tasks t "
+                + "JOIN channels_members m ON m.channel_id=t.channel_id "
                 + "WHERE m.user_id=:user AND t.status IN "
                 + ACTIVE_TASKS
                 + " AND t.due_at>=:now "
@@ -81,7 +81,7 @@ public class DashboardRepository {
             (rs, rowNum) ->
                 new DashboardTaskView(
                     rs.getObject("id", UUID.class),
-                    rs.getObject("workspace_id", UUID.class),
+                    rs.getObject("channel_id", UUID.class),
                     rs.getString("title"),
                     rs.getObject("due_at", OffsetDateTime.class),
                     TaskPriority.valueOf(rs.getString("priority")),
@@ -91,8 +91,8 @@ public class DashboardRepository {
 
   public Optional<DashboardAgendaView> nextAgenda(UUID userId, OffsetDateTime now) {
     return jdbc.sql(
-            "SELECT a.id,a.workspace_id,a.title,a.starts_at,a.status FROM agenda_entries a "
-                + "JOIN workspace_members m ON m.workspace_id=a.workspace_id "
+            "SELECT a.id,a.channel_id,a.title,a.starts_at,a.status FROM agenda_entries a "
+                + "JOIN channels_members m ON m.channel_id=a.channel_id "
                 + "WHERE m.user_id=:user AND a.status="
                 + CONFIRMED_AGENDAS
                 + " AND a.starts_at>=:now ORDER BY a.starts_at,a.created_at LIMIT 1")
@@ -102,7 +102,7 @@ public class DashboardRepository {
             (rs, rowNum) ->
                 new DashboardAgendaView(
                     rs.getObject("id", UUID.class),
-                    rs.getObject("workspace_id", UUID.class),
+                    rs.getObject("channel_id", UUID.class),
                     rs.getString("title"),
                     rs.getObject("starts_at", OffsetDateTime.class),
                     AgendaStatus.valueOf(rs.getString("status"))))

@@ -7,7 +7,7 @@ import org.springframework.data.jpa.domain.Specification;
 public final class AgendaSpecifications {
   private AgendaSpecifications() {}
 
-  public static Specification<AgendaEntity> workspaceId(UUID workspaceId) {
-    return (root, query, builder) -> builder.equal(root.get("workspaceId"), workspaceId);
+  public static Specification<AgendaEntity> channelId(UUID channelId) {
+    return (root, query, builder) -> builder.equal(root.get("channelId"), channelId);
   }
 }

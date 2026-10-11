@@ -24,25 +24,25 @@ public class AgendaRepository {
   private final AgendaJpaRepository agendas;
   private final ObjectMapper mapper;
 
-  public Page<AgendaView> list(UUID workspace, Pageable pageable) {
+  public Page<AgendaView> list(UUID channel, Pageable pageable) {
     Pageable sorted =
         PageRequest.of(
             pageable.getPageNumber(), pageable.getPageSize(), Sort.by("startsAt").ascending());
-    return agendas.findAll(AgendaSpecifications.workspaceId(workspace), sorted).map(this::view);
+    return agendas.findAll(AgendaSpecifications.channelId(channel), sorted).map(this::view);
   }
 
-  public Optional<AgendaView> get(UUID workspace, UUID id) {
-    return agendas.findByIdAndWorkspaceId(id, workspace).map(this::view);
+  public Optional<AgendaView> get(UUID channel, UUID id) {
+    return agendas.findByIdAndChannelId(id, channel).map(this::view);
   }
 
   public UUID create(
-      UUID workspace, UUID importId, String title, OffsetDateTime startsAt, List<UUID> sources) {
+      UUID channel, UUID importId, String title, OffsetDateTime startsAt, List<UUID> sources) {
     try {
       return agendas
           .save(
               AgendaEntity.builder()
                   .id(UUID.randomUUID())
-                  .workspaceId(workspace)
+                  .channelId(channel)
                   .importId(importId)
                   .title(title)
                   .startsAt(startsAt)
@@ -58,21 +58,21 @@ public class AgendaRepository {
     }
   }
 
-  public AgendaView save(UUID workspace, UUID id, String title, OffsetDateTime startsAt) {
-    AgendaEntity agenda = agendas.findByIdAndWorkspaceId(id, workspace).orElseThrow();
+  public AgendaView save(UUID channel, UUID id, String title, OffsetDateTime startsAt) {
+    AgendaEntity agenda = agendas.findByIdAndChannelId(id, channel).orElseThrow();
     agenda.setTitle(title);
     agenda.setStartsAt(startsAt);
     return view(agendas.save(agenda));
   }
 
-  public AgendaView confirm(UUID workspace, UUID id) {
-    AgendaEntity agenda = agendas.findByIdAndWorkspaceId(id, workspace).orElseThrow();
+  public AgendaView confirm(UUID channel, UUID id) {
+    AgendaEntity agenda = agendas.findByIdAndChannelId(id, channel).orElseThrow();
     agenda.setStatus(AgendaStatus.CONFIRMED);
     return view(agendas.save(agenda));
   }
 
-  public void delete(UUID workspace, UUID id) {
-    agendas.findByIdAndWorkspaceId(id, workspace).ifPresent(agendas::delete);
+  public void delete(UUID channel, UUID id) {
+    agendas.findByIdAndChannelId(id, channel).ifPresent(agendas::delete);
   }
 
   private AgendaView view(AgendaEntity agenda) {

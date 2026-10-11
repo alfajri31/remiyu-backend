@@ -8,14 +8,33 @@ import lombok.*;
 
 @Entity
 @Table(name = "import_runs")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ImportRunEntity {
   @Id private UUID id;
-  @Column(name = "workspace_id", nullable = false) private UUID workspaceId;
-  @Column(nullable = false) private String filename;
-  @Column(name = "new_messages", nullable = false) private int newMessages;
-  @Column(name = "duplicate_messages", nullable = false) private int duplicateMessages;
-  @Column(name = "ai_provider", nullable = false) private String aiProvider;
-  @Enumerated(EnumType.STRING) @Column(nullable = false) private ImportStatus status;
-  @Column(name = "created_at", nullable = false) private OffsetDateTime createdAt;
+
+  @Column(name = "channel_id", nullable = false)
+  private UUID channelId;
+
+  @Column(nullable = false)
+  private String filename;
+
+  @Column(name = "new_messages", nullable = false)
+  private int newMessages;
+
+  @Column(name = "duplicate_messages", nullable = false)
+  private int duplicateMessages;
+
+  @Column(name = "ai_provider", nullable = false)
+  private String aiProvider;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private ImportStatus status;
+
+  @Column(name = "created_at", nullable = false)
+  private OffsetDateTime createdAt;
 }

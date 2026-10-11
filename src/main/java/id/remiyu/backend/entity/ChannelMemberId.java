@@ -6,8 +6,12 @@ import java.util.UUID;
 import lombok.*;
 
 @Embeddable
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @EqualsAndHashCode
-public class WorkspaceMemberId implements Serializable {
-  private UUID workspaceId;
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode
+public class ChannelMemberId implements Serializable {
+  private UUID channelId;
   private UUID userId;
 }

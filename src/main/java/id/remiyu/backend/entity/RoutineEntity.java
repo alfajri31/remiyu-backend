@@ -17,8 +17,8 @@ import lombok.*;
 public class RoutineEntity {
   @Id private UUID id;
 
-  @Column(name = "workspace_id", nullable = false)
-  private UUID workspaceId;
+  @Column(name = "channel_id", nullable = false)
+  private UUID channelId;
 
   @Column(nullable = false)
   private String title;

@@ -19,23 +19,23 @@ public class ImportRepository {
   private final JdbcClient jdbc;
   private final ChatMessageJpaRepository chatMessages;
 
-  public void lockWorkspace(UUID workspace) {
-    jdbc.sql("SELECT id FROM workspaces WHERE id=:id FOR UPDATE")
-        .param("id", workspace)
+  public void lockChannel(UUID channel) {
+    jdbc.sql("SELECT id FROM channels WHERE id=:id FOR UPDATE")
+        .param("id", channel)
         .query(UUID.class)
         .single();
   }
 
-  public boolean contains(UUID workspace, String key) {
-    return chatMessages.existsByWorkspaceIdAndMessageKey(workspace, key);
+  public boolean contains(UUID channel, String key) {
+    return chatMessages.existsByChannelIdAndMessageKey(channel, key);
   }
 
-  public UUID message(UUID workspace, UUID importId, String key, ParsedChatMessage m) {
+  public UUID message(UUID channel, UUID importId, String key, ParsedChatMessage m) {
     UUID id = UUID.randomUUID();
     chatMessages.save(
         ChatMessageEntity.builder()
             .id(id)
-            .workspaceId(workspace)
+            .channelId(channel)
             .importId(importId)
             .messageKey(key)
             .sender(m.sender())
@@ -45,17 +45,16 @@ public class ImportRepository {
     return id;
   }
 
-  public void startRun(UUID id, UUID workspace, String filename, String provider) {
+  public void startRun(UUID id, UUID channel, String filename, String provider) {
     jdbc.sql(
             "INSERT INTO import_runs VALUES (:id,:w,:filename,:added,:duplicates,:provider,:status,:now)")
         .param("id", id)
-        .param("w", workspace)
+        .param("w", channel)
         .param("filename", filename)
         .param("added", 0)
         .param("duplicates", 0)
         .param("provider", provider)
-        .param(
-            "status", ImportStatus.NEEDS_REVIEW.name())
+        .param("status", ImportStatus.NEEDS_REVIEW.name())
         .param("now", OffsetDateTime.now())
         .update();
   }
@@ -72,15 +71,15 @@ public class ImportRepository {
         .update();
   }
 
-  public List<ImportRunView> list(UUID workspace) {
+  public List<ImportRunView> list(UUID channel) {
     return jdbc.sql(
-            "SELECT * FROM import_runs WHERE workspace_id=:w ORDER BY created_at DESC LIMIT 100")
-        .param("w", workspace)
+            "SELECT * FROM import_runs WHERE channel_id=:w ORDER BY created_at DESC LIMIT 100")
+        .param("w", channel)
         .query(
             (rs, n) ->
                 new ImportRunView(
                     rs.getObject("id", UUID.class),
-                    rs.getObject("workspace_id", UUID.class),
+                    rs.getObject("channel_id", UUID.class),
                     rs.getString("filename"),
                     rs.getInt("new_messages"),
                     rs.getInt("duplicate_messages"),
@@ -90,10 +89,10 @@ public class ImportRepository {
         .list();
   }
 
-  public List<AiContracts.Message> recentMessages(UUID workspace) {
+  public List<AiContracts.Message> recentMessages(UUID channel) {
     return jdbc.sql(
-            "SELECT id,sender,sent_at,content FROM chat_messages WHERE workspace_id=:workspace ORDER BY sent_at DESC LIMIT 100")
-        .param("workspace", workspace)
+            "SELECT id,sender,sent_at,content FROM chat_messages WHERE channel_id=:channel ORDER BY sent_at DESC LIMIT 100")
+        .param("channel", channel)
         .query(
             (rs, row) ->
                 new AiContracts.Message(

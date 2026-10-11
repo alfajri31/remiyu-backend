@@ -7,7 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface SubmissionService {
   SubmissionView submit(
-      UUID user, UUID workspace, UUID task, String link, String note, MultipartFile file);
+      UUID user, UUID channel, UUID task, String link, String note, MultipartFile file);
 
-  List<SubmissionView> list(UUID user, UUID workspace, UUID task);
+  List<SubmissionView> list(UUID user, UUID channel, UUID task);
 }

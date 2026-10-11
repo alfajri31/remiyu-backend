@@ -9,5 +9,5 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 public interface AgendaJpaRepository
     extends JpaRepository<AgendaEntity, UUID>, JpaSpecificationExecutor<AgendaEntity> {
 
-  Optional<AgendaEntity> findByIdAndWorkspaceId(UUID id, UUID workspaceId);
+  Optional<AgendaEntity> findByIdAndChannelId(UUID id, UUID channelId);
 }

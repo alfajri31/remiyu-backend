@@ -9,5 +9,5 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 public interface TaskJpaRepository
     extends JpaRepository<TaskEntity, UUID>, JpaSpecificationExecutor<TaskEntity> {
 
-  Optional<TaskEntity> findByIdAndWorkspaceId(UUID id, UUID workspaceId);
+  Optional<TaskEntity> findByIdAndChannelId(UUID id, UUID channelId);
 }
