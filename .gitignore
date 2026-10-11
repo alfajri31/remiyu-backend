@@ -75,3 +75,5 @@ mockoon/remiyu-ai.json
 .env.example
 .env.local.example
 .env.prod.example
+docs
+

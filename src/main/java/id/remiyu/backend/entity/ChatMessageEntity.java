@@ -28,13 +28,16 @@ public class ChatMessageEntity {
   @Column(name = "import_id")
   private UUID importId;
 
-  @Column(name = "message_key", nullable = false)
-  private String messageKey;
+  @Column(name = "message_hash", nullable = false)
+  private String messageHash;
+
+  @Column(name = "message_order", nullable = false)
+  private long messageOrder;
 
   @Column(nullable = false)
   private String sender;
 
-  @Column(name = "sent_at", nullable = false)
+  @Column(name = "sent_at")
   private OffsetDateTime sentAt;
 
   @Column(nullable = false)

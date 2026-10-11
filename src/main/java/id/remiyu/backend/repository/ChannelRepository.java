@@ -78,17 +78,30 @@ public class ChannelRepository {
 
   public void insert(
       UUID id, UUID owner, String name, Platform platform, String account, BillingStatus billing) {
-    jdbc.sql(
-            "INSERT INTO channels VALUES (:id,:owner,:name,:platform,:account,:connection,:billing,:invite,:now)")
+    OffsetDateTime now = OffsetDateTime.now();
+    // Compatibility path: the current API creates the first Channel together with its Workspace.
+    jdbc.sql("INSERT INTO workspaces (id,owner_id,name,created_at) VALUES (:id,:owner,:name,:now)")
         .param("id", id)
         .param("owner", owner)
         .param("name", name)
+        .param("now", now)
+        .update();
+    jdbc.sql(
+            "INSERT INTO channels (id,workspace_id,owner_id,name,channel_key,platform,account,connection_status,billing_status,invite_token,created_at) "
+                + "VALUES (:id,:workspace,:owner,:name,:key,:platform,:account,:connection,:billing,:invite,:now)")
+        .param("id", id)
+        .param("workspace", id)
+        .param("owner", owner)
+        .param("name", name)
+        .param(
+            "key",
+            id + ":" + name.trim().toLowerCase(java.util.Locale.ROOT).replaceAll("\\s+", " "))
         .param("platform", platform.name())
         .param("account", account)
         .param("connection", ConnectionStatus.NOT_CONNECTED.name())
         .param("billing", billing.name())
         .param("invite", UUID.randomUUID())
-        .param("now", OffsetDateTime.now())
+        .param("now", now)
         .update();
     addMember(id, owner, ChannelRole.ADMIN);
   }

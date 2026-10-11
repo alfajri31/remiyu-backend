@@ -16,17 +16,26 @@ import lombok.*;
 public class ChannelEntity {
   @Id private UUID id;
 
+  @Column(name = "workspace_id", nullable = false)
+  private UUID workspaceId;
+
   @Column(name = "owner_id", nullable = false)
   private UUID ownerId;
 
   @Column(nullable = false)
   private String name;
 
+  @Column(name = "channel_key", nullable = false, unique = true)
+  private String channelKey;
+
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private Platform platform;
 
   private String account;
+
+  @Column(name = "external_group_id")
+  private String externalGroupId;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "connection_status", nullable = false)

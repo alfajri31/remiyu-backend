@@ -26,18 +26,28 @@ public class ImportRepository {
         .single();
   }
 
-  public boolean contains(UUID channel, String key) {
-    return chatMessages.existsByChannelIdAndMessageKey(channel, key);
+  public long nextMessageOrder(UUID channel) {
+    return jdbc.sql(
+            "SELECT COALESCE(MAX(message_order), 0) + 1 FROM chat_messages WHERE channel_id=:channel")
+        .param("channel", channel)
+        .query(Long.class)
+        .single();
   }
 
-  public UUID message(UUID channel, UUID importId, String key, ParsedChatMessage m) {
+  public boolean contains(UUID channel, String hash) {
+    return chatMessages.existsByChannelIdAndMessageHash(channel, hash);
+  }
+
+  public UUID message(
+      UUID channel, UUID importId, long messageOrder, String hash, ParsedChatMessage m) {
     UUID id = UUID.randomUUID();
     chatMessages.save(
         ChatMessageEntity.builder()
             .id(id)
             .channelId(channel)
             .importId(importId)
-            .messageKey(key)
+            .messageHash(hash)
+            .messageOrder(messageOrder)
             .sender(m.sender())
             .sentAt(m.sentAt())
             .content(m.text())
@@ -91,7 +101,7 @@ public class ImportRepository {
 
   public List<AiContracts.Message> recentMessages(UUID channel) {
     return jdbc.sql(
-            "SELECT id,sender,sent_at,content FROM chat_messages WHERE channel_id=:channel ORDER BY sent_at DESC LIMIT 100")
+            "SELECT id,sender,sent_at,content FROM chat_messages WHERE channel_id=:channel ORDER BY sent_at DESC NULLS LAST, message_order DESC LIMIT 100")
         .param("channel", channel)
         .query(
             (rs, row) ->

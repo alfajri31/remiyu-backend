@@ -6,7 +6,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ChatMessageJpaRepository extends JpaRepository<ChatMessageEntity, UUID> {
-  boolean existsByChannelIdAndMessageKey(UUID channelId, String messageKey);
+  boolean existsByChannelIdAndMessageHash(UUID channelId, String messageHash);
 
   Optional<ChatMessageEntity> findByIdAndChannelId(UUID id, UUID channelId);
 }

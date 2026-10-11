@@ -66,20 +66,26 @@ public class ImportServiceImpl implements ImportService {
     repository.startRun(importId, channel, filename, provider);
     var messages = new ArrayList<AiContracts.Message>();
     int duplicates = 0;
+    long messageOrder = repository.nextMessageOrder(channel);
     for (var message : parsed) {
-      String key =
+      String normalizedText = message.text().trim().replaceAll("\\s+", " ");
+      String hash =
           Hashes.sha256(
-              message.sentAt().toInstant()
+              channel
+                  + "\u001f"
+                  + messageOrder
                   + "\u001f"
                   + message.sender()
                   + "\u001f"
-                  + message.text());
-      if (repository.contains(channel, key)) {
+                  + normalizedText);
+      if (repository.contains(channel, hash)) {
         duplicates++;
+        messageOrder++;
         continue;
       }
-      UUID id = repository.message(channel, importId, key, message);
+      UUID id = repository.message(channel, importId, messageOrder, hash, message);
       messages.add(new AiContracts.Message(id, message.sender(), message.sentAt(), message.text()));
+      messageOrder++;
     }
     var taskIds = new ArrayList<UUID>();
     var agendaIds = new ArrayList<UUID>();

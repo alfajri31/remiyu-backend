@@ -11,7 +11,7 @@
     {
       "uuid": "47f210fd-7c6a-4c87-b201-613652e72381",
       "type": "http",
-      "documentation": "Simulasi kontrak FastAPI, bukan inferensi AI asli.",
+      "documentation": "Health check untuk gateway AI simulasi Remiyu.",
       "method": "get",
       "endpoint": "health",
       "responses": [
@@ -40,16 +40,70 @@
     {
       "uuid": "47f210fd-7c6a-4c87-b201-613652e72382",
       "type": "http",
-      "documentation": "Simulasi kontrak FastAPI, bukan inferensi AI asli.",
+      "documentation": "Mock respons ekstraksi AI. Rule userId membedakan fixture akun Admin Demo dan Nadia Demo; respons default dipakai untuk user lain.",
       "method": "post",
       "endpoint": "v1/extractions",
       "responses": [
         {
-          "uuid": "cde60724-3ab6-4615-8f83-677c551b7382",
-          "body": "{\n  \"tasks\": [{\n    \"title\": \"Tinjau permintaan kerja dari chat\",\n    \"description\": \"Draft contoh dari Mockoon. Review judul, PIC, dan deadline sebelum konfirmasi.\",\n    \"assigneeName\": null,\n    \"dueAt\": null,\n    \"priority\": \"MEDIUM\",\n    \"sourceMessageIds\": [\"{{body 'messages.0.id'}}\"]\n  }],\n  \"agendas\": [{\n    \"title\": \"Tinjau agenda dari chat\",\n    \"startsAt\": null,\n    \"sourceMessageIds\": [\"{{body 'messages.0.id'}}\"]\n  }]\n}",
-          "latency": 0,
+          "uuid": "3f1b92a1-f8c6-4a3a-b2bb-908bb8dc1101",
+          "body": "{\n  \"tasks\": [{\n    \"title\": \"Finalisasi tindak lanjut operasional\",\n    \"description\": \"Fixture AI untuk Workspace operasional Admin Demo. Tinjau PIC dan tenggat dari pesan: {{body 'messages.0.text'}}\",\n    \"assigneeName\": \"{{body 'messages.0.sender'}}\",\n    \"dueAt\": null,\n    \"priority\": \"HIGH\",\n    \"sourceMessageIds\": [\"{{body 'messages.0.id'}}\"]\n  }],\n  \"agendas\": [{\n    \"title\": \"Review progres operasional\",\n    \"startsAt\": null,\n    \"sourceMessageIds\": [\"{{body 'messages.0.id'}}\"]\n  }]\n}",
+          "latency": 650,
           "statusCode": 200,
-          "label": "Mock response",
+          "label": "AI extraction — Admin Demo",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "userId",
+              "value": "10000000-0000-0000-0000-000000000001",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "3f1b92a1-f8c6-4a3a-b2bb-908bb8dc1102",
+          "body": "{\n  \"tasks\": [{\n    \"title\": \"Susun kalender konten\",\n    \"description\": \"Fixture AI untuk Workspace konten Nadia Demo. Rencanakan format, jadwal publikasi, dan CTA dari pesan: {{body 'messages.0.text'}}\",\n    \"assigneeName\": \"{{body 'messages.0.sender'}}\",\n    \"dueAt\": null,\n    \"priority\": \"MEDIUM\",\n    \"sourceMessageIds\": [\"{{body 'messages.0.id'}}\"]\n  }],\n  \"agendas\": [{\n    \"title\": \"Review draft konten\",\n    \"startsAt\": null,\n    \"sourceMessageIds\": [\"{{body 'messages.0.id'}}\"]\n  }]\n}",
+          "latency": 650,
+          "statusCode": 200,
+          "label": "AI extraction — Nadia Demo",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "userId",
+              "value": "20000000-0000-0000-0000-000000000001",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "cde60724-3ab6-4615-8f83-677c551b7382",
+          "body": "{\n  \"tasks\": [\n    {\n      \"title\": \"Tindak lanjuti permintaan kerja\",\n      \"description\": \"AI mendeteksi permintaan tindakan dari {{body 'messages.0.sender'}}. Konteks pesan: {{body 'messages.0.text'}}. Pastikan PIC dan deadline sebelum dipublikasikan.\",\n      \"assigneeName\": \"{{body 'messages.0.sender'}}\",\n      \"dueAt\": null,\n      \"priority\": \"HIGH\",\n      \"sourceMessageIds\": [\"{{body 'messages.0.id'}}\"]\n    },\n    {\n      \"title\": \"Konfirmasi PIC dan deadline\",\n      \"description\": \"Detail PIC atau tenggat belum cukup eksplisit di percakapan. Jadikan ini draft review admin, bukan penugasan final.\",\n      \"assigneeName\": null,\n      \"dueAt\": null,\n      \"priority\": \"MEDIUM\",\n      \"sourceMessageIds\": [\"{{body 'messages.0.id'}}\"]\n    }\n  ],\n  \"agendas\": [\n    {\n      \"title\": \"Review tindak lanjut percakapan\",\n      \"startsAt\": null,\n      \"sourceMessageIds\": [\"{{body 'messages.0.id'}}\"]\n    }\n  ]\n}",
+          "latency": 650,
+          "statusCode": 200,
+          "label": "AI extraction — review required",
           "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
@@ -69,7 +123,7 @@
     {
       "uuid": "47f210fd-7c6a-4c87-b201-613652e72383",
       "type": "http",
-      "documentation": "Simulasi kontrak FastAPI, bukan inferensi AI asli.",
+      "documentation": "Skenario kegagalan gateway AI untuk menguji pesan error backend.",
       "method": "post",
       "endpoint": "v1/extractions-failure",
       "responses": [
@@ -79,6 +133,172 @@
           "latency": 0,
           "statusCode": 503,
           "label": "Mock response",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null
+    },
+    {
+      "uuid": "47f210fd-7c6a-4c87-b201-613652e72384",
+      "type": "http",
+      "documentation": "Ringkasan AI simulasi per Workspace. Rule userId membedakan fixture operasional dan konten.",
+      "method": "post",
+      "endpoint": "v1/workspace-summaries",
+      "responses": [
+        {
+          "uuid": "3f1b92a1-f8c6-4a3a-b2bb-908bb8dc1201",
+          "body": "{\n  \"currentState\": \"{{body 'workspaceName'}} sedang mengoordinasikan pekerjaan operasional dengan beberapa tindak lanjut aktif.\",\n  \"attention\": \"Prioritaskan blocker vendor dan tugas yang memiliki tenggat paling dekat.\",\n  \"nextSteps\": \"Konfirmasi PIC, cek progres materi peluncuran, lalu jadwalkan review operasional.\"\n}",
+          "latency": 500,
+          "statusCode": 200,
+          "label": "AI workspace summary — Admin Demo",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "userId",
+              "value": "10000000-0000-0000-0000-000000000001",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "3f1b92a1-f8c6-4a3a-b2bb-908bb8dc1202",
+          "body": "{\n  \"currentState\": \"{{body 'workspaceName'}} sedang menyiapkan konten terjadwal untuk minggu berikutnya.\",\n  \"attention\": \"Pastikan kalender konten, desain carousel, dan caption memiliki PIC serta tanggal publikasi.\",\n  \"nextSteps\": \"Finalkan tema harian, review draft konten pagi, lalu siapkan CTA untuk setiap unggahan.\"\n}",
+          "latency": 500,
+          "statusCode": 200,
+          "label": "AI workspace summary — Nadia Demo",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "userId",
+              "value": "20000000-0000-0000-0000-000000000001",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "47f210fd-7c6a-4c87-b201-613652e72394",
+          "body": "{\n  \"currentState\": \"{{body 'workspaceName'}} memiliki pekerjaan aktif yang perlu dipantau. Ringkasan dibuat dari tugas dan agenda yang tersimpan.\",\n  \"attention\": \"Prioritaskan tugas berprioritas tinggi dan konfirmasi PIC atau deadline yang masih kosong.\",\n  \"nextSteps\": \"Tinjau tugas terdekat, tetapkan penanggung jawab, lalu konfirmasi agenda yang sudah siap.\"\n}",
+          "latency": 500,
+          "statusCode": 200,
+          "label": "AI workspace summary",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null
+    },
+    {
+      "uuid": "47f210fd-7c6a-4c87-b201-613652e72385",
+      "type": "http",
+      "documentation": "Deteksi pola rutinitas simulasi. Rule userId membedakan fixture operasional dan konten.",
+      "method": "post",
+      "endpoint": "v1/routine-suggestions",
+      "responses": [
+        {
+          "uuid": "3f1b92a1-f8c6-4a3a-b2bb-908bb8dc1301",
+          "body": "{\n  \"routines\": [{\n    \"title\": \"Tinjau progres operasional harian\",\n    \"schedule\": \"Setiap hari kerja • sekitar 09.00\",\n    \"source\": \"Pesan operasional • {{body 'messages.0.sender'}}\",\n    \"quote\": \"{{body 'messages.0.text'}}\",\n    \"sourceMessageId\": \"{{body 'messages.0.id'}}\"\n  }]\n}",
+          "latency": 500,
+          "statusCode": 200,
+          "label": "AI routine suggestion — Admin Demo",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "userId",
+              "value": "10000000-0000-0000-0000-000000000001",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "3f1b92a1-f8c6-4a3a-b2bb-908bb8dc1302",
+          "body": "{\n  \"routines\": [{\n    \"title\": \"Review draft konten pagi\",\n    \"schedule\": \"Setiap hari kerja • pukul 09.00\",\n    \"source\": \"Pesan konten • {{body 'messages.0.sender'}}\",\n    \"quote\": \"{{body 'messages.0.text'}}\",\n    \"sourceMessageId\": \"{{body 'messages.0.id'}}\"\n  }]\n}",
+          "latency": 500,
+          "statusCode": 200,
+          "label": "AI routine suggestion — Nadia Demo",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "userId",
+              "value": "20000000-0000-0000-0000-000000000001",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "47f210fd-7c6a-4c87-b201-613652e72395",
+          "body": "{\n  \"routines\": [{\n    \"title\": \"Tinjau tindak lanjut harian\",\n    \"schedule\": \"Setiap hari kerja • sekitar 09.00\",\n    \"source\": \"Pesan import • {{body 'messages.0.sender'}}\",\n    \"quote\": \"{{body 'messages.0.text'}}\",\n    \"sourceMessageId\": \"{{body 'messages.0.id'}}\"\n  }]\n}",
+          "latency": 500,
+          "statusCode": 200,
+          "label": "AI routine suggestion",
           "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
@@ -108,6 +328,14 @@
     {
       "type": "route",
       "uuid": "47f210fd-7c6a-4c87-b201-613652e72383"
+    },
+    {
+      "type": "route",
+      "uuid": "47f210fd-7c6a-4c87-b201-613652e72384"
+    },
+    {
+      "type": "route",
+      "uuid": "47f210fd-7c6a-4c87-b201-613652e72385"
     }
   ],
   "proxyMode": false,
