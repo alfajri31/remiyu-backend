@@ -82,29 +82,41 @@ public class ImportServiceImpl implements ImportService {
     var taskIds = new ArrayList<UUID>();
     var agendaIds = new ArrayList<UUID>();
     if (!messages.isEmpty()) {
-      var result = ai.extract(new AiContracts.ExtractionRequest(importId, channel, user, messages));
-      result
-          .tasks()
-          .forEach(
-              t ->
-                  taskIds.add(
-                      tasks.create(
-                          channel,
-                          importId,
-                          t.title(),
-                          t.description(),
-                          t.assigneeName(),
-                          t.dueAt(),
-                          t.priority(),
-                          TaskStatus.DRAFT,
-                          t.sourceMessageIds())));
-      result
-          .agendas()
-          .forEach(
-              a ->
-                  agendaIds.add(
-                      agendas.create(
-                          channel, importId, a.title(), a.startsAt(), a.sourceMessageIds())));
+      List<AiContracts.TaskDraft> extractedTasks;
+      List<AiContracts.AgendaDraft> extractedAgendas;
+      if (ai.supportsSplitExtraction()) {
+        extractedTasks =
+            ai.extractTasks(
+                    new AiContracts.TaskExtractionRequest(importId, channel, user, messages))
+                .tasks();
+        extractedAgendas =
+            ai.extractAgendas(
+                    new AiContracts.AgendaExtractionRequest(importId, channel, user, messages))
+                .agendas();
+      } else {
+        var result =
+            ai.extract(new AiContracts.ExtractionRequest(importId, channel, user, messages));
+        extractedTasks = result.tasks();
+        extractedAgendas = result.agendas();
+      }
+      extractedTasks.forEach(
+          t ->
+              taskIds.add(
+                  tasks.create(
+                      channel,
+                      importId,
+                      t.title(),
+                      t.description(),
+                      t.assigneeName(),
+                      t.dueAt(),
+                      t.priority(),
+                      TaskStatus.DRAFT,
+                      t.sourceMessageIds())));
+      extractedAgendas.forEach(
+          a ->
+              agendaIds.add(
+                  agendas.create(
+                      channel, importId, a.title(), a.startsAt(), a.sourceMessageIds())));
     }
     repository.completeRun(importId, messages.size(), duplicates);
     return new ImportResultResponse(

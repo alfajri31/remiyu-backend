@@ -17,6 +17,8 @@ import org.springframework.web.client.RestClientException;
 public class HttpAiGateway implements AiGateway {
   private final RestClient client;
   private final String path;
+  private final String taskPath;
+  private final String agendaPath;
   private final String summaryPath;
   private final String routinePath;
   private final Validator validator;
@@ -26,6 +28,8 @@ public class HttpAiGateway implements AiGateway {
       Validator validator,
       @Value("${remiyu.ai.base-url}") String baseUrl,
       @Value("${remiyu.ai.extract-path}") String path,
+      @Value("${remiyu.ai.task-extract-path:}") String taskPath,
+      @Value("${remiyu.ai.agenda-extract-path:}") String agendaPath,
       @Value("${remiyu.ai.summary-path}") String summaryPath,
       @Value("${remiyu.ai.routine-path}") String routinePath,
       @Value("${remiyu.ai.api-key}") String apiKey,
@@ -38,9 +42,38 @@ public class HttpAiGateway implements AiGateway {
     if (!apiKey.isBlank()) configured.defaultHeader("Authorization", "Bearer " + apiKey);
     this.client = configured.build();
     this.path = path;
+    this.taskPath = taskPath;
+    this.agendaPath = agendaPath;
     this.summaryPath = summaryPath;
     this.routinePath = routinePath;
     this.validator = validator;
+  }
+
+  @Override
+  public boolean supportsSplitExtraction() {
+    return !taskPath.isBlank() && !agendaPath.isBlank();
+  }
+
+  @Override
+  public AiContracts.TaskExtractionResponse extractTasks(
+      AiContracts.TaskExtractionRequest request) {
+    var result = post(taskPath, request, AiContracts.TaskExtractionResponse.class);
+    if (result == null || !validator.validate(result).isEmpty()) throw invalid();
+    validateSourceMessageIds(
+        request.messages(),
+        result.tasks().stream().flatMap(task -> task.sourceMessageIds().stream()).toList());
+    return result;
+  }
+
+  @Override
+  public AiContracts.AgendaExtractionResponse extractAgendas(
+      AiContracts.AgendaExtractionRequest request) {
+    var result = post(agendaPath, request, AiContracts.AgendaExtractionResponse.class);
+    if (result == null || !validator.validate(result).isEmpty()) throw invalid();
+    validateSourceMessageIds(
+        request.messages(),
+        result.agendas().stream().flatMap(agenda -> agenda.sourceMessageIds().stream()).toList());
+    return result;
   }
 
   @Override
@@ -94,12 +127,21 @@ public class HttpAiGateway implements AiGateway {
           HttpStatus.BAD_GATEWAY, "Layanan AI tidak tersedia atau respons tidak valid.");
     }
     if (result == null || !validator.validate(result).isEmpty()) throw invalid();
-    var ids = new HashSet<java.util.UUID>();
-    request.messages().forEach(m -> ids.add(m.id()));
-    if (result.tasks().stream().anyMatch(t -> !ids.containsAll(t.sourceMessageIds()))
-        || result.agendas().stream().anyMatch(a -> !ids.containsAll(a.sourceMessageIds())))
-      throw invalid();
+    validateSourceMessageIds(
+        request.messages(),
+        java.util.stream.Stream.concat(
+                result.tasks().stream().flatMap(task -> task.sourceMessageIds().stream()),
+                result.agendas().stream().flatMap(agenda -> agenda.sourceMessageIds().stream()))
+            .toList());
     return result;
+  }
+
+  private void validateSourceMessageIds(
+      java.util.List<AiContracts.Message> messages,
+      java.util.List<java.util.UUID> sourceMessageIds) {
+    var ids = new HashSet<java.util.UUID>();
+    messages.forEach(message -> ids.add(message.id()));
+    if (!ids.containsAll(sourceMessageIds)) throw invalid();
   }
 
   private ApiException invalid() {
