@@ -2,8 +2,10 @@ package id.remiyu.backend.repository;
 
 import id.remiyu.backend.dto.ai.AiContracts;
 import id.remiyu.backend.dto.response.ImportRunView;
+import id.remiyu.backend.entity.ChatMessageEntity;
 import id.remiyu.backend.model.ParsedChatMessage;
 import id.remiyu.backend.model.enums.ImportStatus;
+import id.remiyu.backend.repository.jpa.ChatMessageJpaRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class ImportRepository {
   private final JdbcClient jdbc;
+  private final ChatMessageJpaRepository chatMessages;
 
   public void lockWorkspace(UUID workspace) {
     jdbc.sql("SELECT id FROM workspaces WHERE id=:id FOR UPDATE")
@@ -24,27 +27,21 @@ public class ImportRepository {
   }
 
   public boolean contains(UUID workspace, String key) {
-    return jdbc.sql("SELECT count(*) FROM chat_messages WHERE workspace_id=:w AND message_key=:key")
-            .param("w", workspace)
-            .param("key", key)
-            .query(Long.class)
-            .single()
-        > 0;
+    return chatMessages.existsByWorkspaceIdAndMessageKey(workspace, key);
   }
 
   public UUID message(UUID workspace, UUID importId, String key, ParsedChatMessage m) {
     UUID id = UUID.randomUUID();
-    jdbc.sql(
-            "INSERT INTO chat_messages (id,workspace_id,import_id,message_key,sender,sent_at,content) "
-                + "VALUES (:id,:w,:import,:key,:sender,:sent,:content)")
-        .param("id", id)
-        .param("w", workspace)
-        .param("import", importId)
-        .param("key", key)
-        .param("sender", m.sender())
-        .param("sent", m.sentAt())
-        .param("content", m.text())
-        .update();
+    chatMessages.save(
+        ChatMessageEntity.builder()
+            .id(id)
+            .workspaceId(workspace)
+            .importId(importId)
+            .messageKey(key)
+            .sender(m.sender())
+            .sentAt(m.sentAt())
+            .content(m.text())
+            .build());
     return id;
   }
 
