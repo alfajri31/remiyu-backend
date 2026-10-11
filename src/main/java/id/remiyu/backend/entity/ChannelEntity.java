@@ -25,9 +25,6 @@ public class ChannelEntity {
   @Column(nullable = false)
   private String name;
 
-  @Column(name = "channel_key", nullable = false, unique = true)
-  private String channelKey;
-
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private Platform platform;

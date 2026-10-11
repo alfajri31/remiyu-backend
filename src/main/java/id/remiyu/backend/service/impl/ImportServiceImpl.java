@@ -69,15 +69,7 @@ public class ImportServiceImpl implements ImportService {
     long messageOrder = repository.nextMessageOrder(channel);
     for (var message : parsed) {
       String normalizedText = message.text().trim().replaceAll("\\s+", " ");
-      String hash =
-          Hashes.sha256(
-              channel
-                  + "\u001f"
-                  + messageOrder
-                  + "\u001f"
-                  + message.sender()
-                  + "\u001f"
-                  + normalizedText);
+      String hash = Hashes.sha256(message.sender() + "\u001f" + normalizedText);
       if (repository.contains(channel, hash)) {
         duplicates++;
         messageOrder++;
